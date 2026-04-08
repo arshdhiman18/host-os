@@ -23,23 +23,21 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 animate-fade-in">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
+      {/* Modal — flex column so header is sticky, content scrolls */}
       <div
-        className={`relative w-full ${sizeClasses[size]} bg-white rounded-t-3xl md:rounded-2xl shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${sizeClasses[size]} bg-white rounded-t-3xl md:rounded-2xl shadow-2xl animate-fade-in-up flex flex-col`}
+        style={{ maxHeight: '90dvh' }}
       >
-        {/* Handle (mobile) */}
-        <div className="md:hidden flex justify-center pt-3 pb-1">
+        {/* Handle (mobile only) */}
+        <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
-        {/* Header */}
+        {/* Header — fixed, never scrolls */}
         {title && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
             <h2 className="text-base font-bold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
@@ -50,8 +48,8 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
           </div>
         )}
 
-        {/* Content */}
-        <div className="px-5 py-4 pb-8 md:pb-5">
+        {/* Content — scrollable */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 pb-10">
           {children}
         </div>
       </div>
