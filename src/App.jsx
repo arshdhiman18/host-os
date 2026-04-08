@@ -1,6 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import api from './utils/api';
+
+// Keep Render free tier alive — ping every 14 minutes
+const useKeepAlive = () => {
+  useEffect(() => {
+    const ping = () => api.get('/health').catch(() => {});
+    ping(); // ping on load
+    const id = setInterval(ping, 14 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+};
 
 // Pages
 import Landing from './pages/Landing';
@@ -75,11 +86,16 @@ const AppRoutes = () => (
   </Routes>
 );
 
+function AppInner() {
+  useKeepAlive();
+  return <AppRoutes />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <AppInner />
       </AuthProvider>
     </BrowserRouter>
   );

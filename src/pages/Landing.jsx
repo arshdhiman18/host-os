@@ -78,15 +78,15 @@ export default function Landing() {
         </div>
 
         {/* Social proof */}
-        <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
+        <div className="flex items-center justify-center gap-4 flex-wrap text-sm text-gray-400">
           <span className="flex items-center gap-1">
             <span className="font-bold text-gray-700">500+</span> hosts
           </span>
-          <span className="w-1 h-1 rounded-full bg-gray-300" />
+          <span className="w-1 h-1 rounded-full bg-gray-300 hidden sm:block" />
           <span className="flex items-center gap-1">
-            <span className="font-bold text-gray-700">10,000+</span> guests onboarded
+            <span className="font-bold text-gray-700">10,000+</span> guests
           </span>
-          <span className="w-1 h-1 rounded-full bg-gray-300" />
+          <span className="w-1 h-1 rounded-full bg-gray-300 hidden sm:block" />
           <span className="flex items-center gap-1 text-amber-500">
             ★★★★★ <span className="text-gray-400">rated</span>
           </span>
@@ -94,20 +94,20 @@ export default function Landing() {
       </section>
 
       {/* App preview strip */}
-      <div className="max-w-5xl mx-auto px-4 mb-16">
+      <div className="max-w-5xl mx-auto px-3 mb-16">
         <div className="rounded-3xl overflow-hidden shadow-card-lg border border-gray-100"
           style={{ background: 'var(--color-primary-light)' }}>
-          <div className="p-6 md:p-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 md:p-8">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { label: 'Total Earnings', value: '₹1,24,500', color: 'var(--color-primary)' },
                 { label: 'This Month', value: '₹28,000', color: 'var(--color-primary-dark)' },
                 { label: 'Total Bookings', value: '47', color: 'var(--color-accent)' },
                 { label: 'Pending', value: '₹4,500', color: '#EF4444' },
               ].map((stat) => (
-                <div key={stat.label} className="bg-white rounded-2xl p-4 shadow-card">
-                  <div className="text-xs font-medium text-gray-400 mb-1">{stat.label}</div>
-                  <div className="text-xl font-extrabold" style={{ color: stat.color }}>{stat.value}</div>
+                <div key={stat.label} className="bg-white rounded-2xl p-3 md:p-4 shadow-card">
+                  <div className="text-xs font-medium text-gray-400 mb-1 truncate">{stat.label}</div>
+                  <div className="text-lg md:text-xl font-extrabold truncate" style={{ color: stat.color }}>{stat.value}</div>
                 </div>
               ))}
             </div>
