@@ -1,0 +1,214 @@
+/* ============================================
+   HOSTOS DESIGN SYSTEM - ALL COLORS IN ONE PLACE
+   Change brand colors here ONLY
+   ============================================ */
+:root {
+  --color-primary: #509B8D;
+  --color-primary-dark: #2F5D56;
+  --color-primary-light: #E6F4F1;
+  --color-accent: #F59E0B;
+
+  /* Derived semantic tokens */
+  --color-bg: #F8FAFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E8EDEF;
+  --color-border-subtle: #F0F3F4;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+
+  /* Status colors */
+  --color-success: #10B981;
+  --color-warning: var(--color-accent);
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Spacing & layout */
+  --bottom-nav-height: 68px;
+  --header-height: 60px;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base resets */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ============================================
+   COMPONENT UTILITIES
+   ============================================ */
+
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-gray-50 p-4;
+  }
+  .card-md {
+    @apply bg-white rounded-2xl shadow-card-md border border-gray-50 p-5;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-white transition-all duration-150 active:scale-95;
+    background-color: var(--color-primary);
+  }
+  .btn-primary:hover {
+    background-color: var(--color-primary-dark);
+  }
+  .btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all duration-150 active:scale-95 border;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
+  }
+
+  .btn-ghost {
+    @apply flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-gray-600 transition-all duration-150 active:scale-95 hover:bg-gray-100;
+  }
+
+  .btn-danger {
+    @apply flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600 transition-all duration-150 active:scale-95;
+  }
+
+  .btn-accent {
+    @apply flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-white transition-all duration-150 active:scale-95;
+    background-color: var(--color-accent);
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium outline-none transition-all duration-150 bg-white;
+    color: var(--color-text-primary);
+  }
+  .input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(80, 155, 141, 0.12);
+  }
+  .input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .label {
+    @apply block text-sm font-semibold text-gray-700 mb-1.5;
+  }
+
+  .input-group {
+    @apply space-y-1;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-success {
+    @apply badge bg-green-100 text-green-700;
+  }
+  .badge-warning {
+    @apply badge bg-amber-100 text-amber-700;
+  }
+  .badge-danger {
+    @apply badge bg-red-100 text-red-600;
+  }
+  .badge-primary {
+    @apply badge;
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+  }
+  .badge-gray {
+    @apply badge bg-gray-100 text-gray-600;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  /* Section header */
+  .section-title {
+    @apply text-base font-bold text-gray-900;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-gray-100 my-4;
+  }
+
+  /* Mobile bottom padding (for bottom nav) */
+  .pb-nav {
+    padding-bottom: calc(var(--bottom-nav-height) + 1rem);
+  }
+}
+
+/* ============================================
+   SCROLLBARS
+   ============================================ */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 99px;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.25s ease-out;
+}
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(to right, #f0f0f0 8%, #e0e0e0 18%, #f0f0f0 33%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+/* Platform color dots */
+.platform-airbnb { color: #FF5A5F; }
+.platform-booking { color: #003580; }
+.platform-direct { color: var(--color-primary); }
+.platform-other { color: var(--color-text-secondary); }
