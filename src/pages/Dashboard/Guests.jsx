@@ -254,10 +254,23 @@ export default function Guests() {
 
   const ratingMutation = useMutation({
     mutationFn: ({ id, rating }) => api.patch(`/bookings/${id}/rating`, { rating }),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      if (selectedBooking?._id === res.data.booking._id) setSelectedBooking(res.data.booking);
+    // Optimistic: update UI immediately, revert on error
+    onMutate: async ({ id, rating }) => {
+      await queryClient.cancelQueries({ queryKey: ['bookings', platform] });
+      const previous = queryClient.getQueryData(['bookings', platform]);
+      queryClient.setQueryData(['bookings', platform], (old) => {
+        if (!old) return old;
+        return { ...old, bookings: old.bookings.map(b => b._id === id ? { ...b, guestRating: rating } : b) };
+      });
+      // Update open detail modal too
+      if (selectedBooking?._id === id) setSelectedBooking(prev => prev ? { ...prev, guestRating: rating } : prev);
+      return { previous };
     },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['bookings', platform], context.previous);
+      toast.error('Failed to update rating');
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['bookings'] }),
   });
 
   const handleExport = async () => {

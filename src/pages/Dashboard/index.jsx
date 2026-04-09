@@ -8,6 +8,7 @@ import Overview from './Overview';
 import Guests from './Guests';
 import Earnings from './Earnings';
 import Properties from './Properties';
+import Verification from './Verification';
 
 const TABS = ['overview', 'guests', 'earnings', 'properties'];
 
@@ -23,13 +24,22 @@ export default function Dashboard() {
     navigate(`/dashboard/${newTab}`, { replace: true });
   };
 
-  // Check if subscription expired
   const isExpired = user && !user.hasAccess;
+
+  // Verification gate: if unverified or pending, show verification screen
+  // (admin bypass — admins don't need verification)
+  const needsVerification =
+    user &&
+    user.role !== 'admin' &&
+    user.verificationStatus !== 'verified' &&
+    user.verificationStatus != null; // null/undefined = old users, let them through
 
   return (
     <>
       <Layout activeTab={activeTab} onTabChange={handleTabChange}>
-        {isExpired ? (
+        {needsVerification ? (
+          <Verification />
+        ) : isExpired ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
               style={{ background: 'var(--color-primary-light)' }}>
@@ -55,7 +65,7 @@ export default function Dashboard() {
         )}
 
         {/* Trial banner */}
-        {user?.subscriptionStatus === 'trial' && user?.trialDaysLeft <= 3 && (
+        {!needsVerification && user?.subscriptionStatus === 'trial' && user?.trialDaysLeft <= 3 && (
           <div
             className="fixed bottom-20 md:bottom-4 left-4 right-4 md:left-64 md:right-4 rounded-2xl p-3 flex items-center justify-between shadow-card-lg z-40 cursor-pointer"
             style={{ background: 'var(--color-accent)', color: 'white' }}

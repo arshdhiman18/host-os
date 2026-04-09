@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, Check, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Check, ArrowRight, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const perks = ['15-day free trial', 'No credit card required', 'Cancel anytime'];
@@ -15,8 +15,12 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password) {
-      toast.error('Name, email and password are required');
+    if (!form.name || !form.email || !form.phone || !form.password) {
+      toast.error('All fields are required');
+      return;
+    }
+    if (!form.phone.startsWith('+')) {
+      toast.error('Please include country code, e.g. +91 98765 43210');
       return;
     }
     if (form.password.length < 6) {
@@ -95,17 +99,21 @@ export default function Signup() {
 
             <div className="input-group">
               <label className="label">
-                Phone <span className="text-gray-400 font-normal">(optional)</span>
+                Phone <span className="text-xs text-gray-400 font-normal">(with country code)</span>
               </label>
-              <input
-                type="tel"
-                className="input"
-                placeholder="+91 98765 43210"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                autoComplete="tel"
-                inputMode="tel"
-              />
+              <div className="relative">
+                <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="tel"
+                  className="input pl-9"
+                  placeholder="+91 98765 43210"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  autoComplete="tel"
+                  inputMode="tel"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Include your country code (e.g. +91 for India, +1 for USA)</p>
             </div>
 
             <div className="input-group">

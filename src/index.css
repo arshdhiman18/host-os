@@ -153,9 +153,9 @@ body {
     @apply border-t border-gray-100 my-4;
   }
 
-  /* Mobile bottom padding (for bottom nav) */
+  /* Mobile bottom padding (for bottom nav) — includes iOS safe-area-inset */
   .pb-nav {
-    padding-bottom: calc(var(--bottom-nav-height) + 1rem);
+    padding-bottom: calc(var(--bottom-nav-height) + 1rem + env(safe-area-inset-bottom, 0px));
   }
 }
 

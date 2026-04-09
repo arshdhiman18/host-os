@@ -182,16 +182,30 @@ export default function Earnings() {
       <div className="card">
         <div className="text-xs font-semibold text-gray-500 mb-2">Filter by date</div>
         <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs text-gray-400">From</label>
-            <input type="date" className="input mt-0.5 text-sm" value={filterStart}
-              onChange={e => setFilterStart(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400">To</label>
-            <input type="date" className="input mt-0.5 text-sm" value={filterEnd}
-              onChange={e => setFilterEnd(e.target.value)} />
-          </div>
+          {[
+            { label: 'From', value: filterStart, setter: setFilterStart },
+            { label: 'To', value: filterEnd, setter: setFilterEnd },
+          ].map(({ label, value, setter }) => (
+            <div key={label}>
+              <label className="text-xs text-gray-400">{label}</label>
+              {/* Custom date input: shows placeholder text when empty (fixes iOS blank field) */}
+              <div className="relative mt-0.5">
+                <input
+                  type="date"
+                  className="input text-sm w-full"
+                  style={{ color: value ? 'var(--color-text-primary)' : 'transparent' }}
+                  value={value}
+                  onChange={e => setter(e.target.value)}
+                />
+                {!value && (
+                  <span className="absolute inset-0 flex items-center px-4 text-sm pointer-events-none"
+                    style={{ color: 'var(--color-text-muted)' }}>
+                    Select date
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
         {(filterStart || filterEnd) && (
           <button onClick={() => { setFilterStart(''); setFilterEnd(''); }}
