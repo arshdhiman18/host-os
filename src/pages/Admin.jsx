@@ -713,10 +713,6 @@ export default function Admin() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/dashboard')}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-              Dashboard
-            </button>
             <button onClick={handleLogout}
               className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
               <LogOut size={14} />

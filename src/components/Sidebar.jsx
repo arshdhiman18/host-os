@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, IndianRupee, Home, LogOut, Settings, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, IndianRupee, Home, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -56,18 +56,6 @@ export default function Sidebar({ activeTab, onTabChange }) {
         })}
       </nav>
 
-      {/* Admin link */}
-      {user?.role === 'admin' && (
-        <div className="px-3 pb-2">
-          <button
-            onClick={() => navigate('/admin')}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-purple-600 hover:bg-purple-50 transition-all"
-          >
-            <Shield size={18} />
-            Admin Panel
-          </button>
-        </div>
-      )}
 
       {/* User info */}
       <div className="border-t border-gray-100 px-4 py-4">
