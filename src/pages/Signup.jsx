@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Check, ArrowRight, ChevronDown, Search } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import OtpVerify from '../components/OtpVerify';
 
 const COUNTRIES = [
   { code: 'IN', dial: '+91',  name: 'India',          flag: '🇮🇳' },
@@ -126,7 +127,8 @@ export default function Signup() {
   const [country, setCountry] = useState(COUNTRIES[0]);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const [pendingEmail, setPendingEmail] = useState(null);
+  const { loginWithToken } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -148,15 +150,41 @@ export default function Signup() {
         phone: fullPhone,
         password: form.password,
       });
-      localStorage.setItem('hostos_token', data.token);
-      login(data.user);
-      navigate('/dashboard');
+      setPendingEmail(data.email);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleVerified = (token, user) => {
+    loginWithToken(token, user);
+    navigate('/dashboard');
+  };
+
+  if (pendingEmail) {
+    return (
+      <div className="min-h-screen min-h-dvh flex flex-col" style={{ background: 'var(--color-bg)' }}>
+        <div className="px-4 py-4">
+          <Link to="/" className="flex items-center gap-2 w-fit">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: 'var(--color-primary)' }}>
+              <span className="text-white font-bold text-sm">H</span>
+            </div>
+            <span className="font-bold text-gray-900">HostOS</span>
+          </Link>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
+          <OtpVerify
+            email={pendingEmail}
+            onSuccess={handleVerified}
+            onBack={() => setPendingEmail(null)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen min-h-dvh flex flex-col" style={{ background: 'var(--color-bg)' }}>
