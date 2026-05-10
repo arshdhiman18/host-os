@@ -2,37 +2,63 @@ import React, { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import {
-  TrendingUp, TrendingDown, AlertTriangle,
-  IndianRupee, Download, Upload,
-  ArrowRight, ArrowLeft, Check, Trash2, Plus, Zap,
+  TrendingUp, TrendingDown, AlertTriangle, IndianRupee,
+  Download, Upload, ArrowRight, ArrowLeft, Check, Trash2,
+  Plus, ChevronDown, Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
 import ExpenseModal, { CATEGORY_META } from '../../components/ExpenseModal';
 
 const PLATFORM_COLORS = {
-  Airbnb: '#FF5A5F',
-  'Booking.com': '#0071C2',
-  Direct: '#509B8D',
-  Other: '#6B7280',
-  Manual: '#8B5CF6',
+  Airbnb: '#FF5A5F', 'Booking.com': '#0071C2',
+  Direct: '#509B8D', Other: '#6B7280', Manual: '#8B5CF6',
 };
 
 const STATUS_CFG = {
-  Profitable:   { border: '#10B981', bg: '#F0FDF4', dot: '#10B981', text: '#065F46', badge: '#D1FAE5' },
-  'Low Margin': { border: '#F59E0B', bg: '#FFFBEB', dot: '#F59E0B', text: '#92400E', badge: '#FEF3C7' },
-  'Loss-Making':{ border: '#EF4444', bg: '#FFF5F5', dot: '#EF4444', text: '#991B1B', badge: '#FEE2E2' },
+  Profitable:    { dot: '#10B981', bg: '#DCFCE7', text: '#166534' },
+  'Low Margin':  { dot: '#F59E0B', bg: '#FEF9C3', text: '#854D0E' },
+  'Loss-Making': { dot: '#EF4444', bg: '#FEE2E2', text: '#991B1B' },
 };
+
+const RANGE_LABELS = { '3m': 'Last 3 months', '6m': 'Last 6 months', year: 'This year', all: 'All time' };
 
 function getDateRange(range) {
   const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const today = fmt(now);
-  if (range === '3m') return { start: fmt(new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())), end: today };
-  if (range === '6m') return { start: fmt(new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())), end: today };
+  if (range === '3m')  return { start: fmt(new Date(now.getFullYear(), now.getMonth() - 3,  now.getDate())), end: today };
+  if (range === '6m')  return { start: fmt(new Date(now.getFullYear(), now.getMonth() - 6,  now.getDate())), end: today };
   if (range === 'year') return { start: `${now.getFullYear()}-01-01`, end: today };
   return { start: '', end: '' };
+}
+
+// ─── Range dropdown ──────────────────────────────────────────────────────────
+function RangeDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        {RANGE_LABELS[value]} <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-gray-100 rounded-2xl shadow-card-md z-20 overflow-hidden">
+          {Object.entries(RANGE_LABELS).map(([k, label]) => (
+            <button key={k} onClick={() => { onChange(k); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-between"
+              style={{ color: value === k ? 'var(--color-primary)' : '#374151' }}>
+              {label}
+              {value === k && <Check size={13} style={{ color: 'var(--color-primary)' }} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── CSV Import Modal ─────────────────────────────────────────────────────────
@@ -46,7 +72,7 @@ function ImportModal({ onClose, onImported, properties }) {
   const [loading, setLoading] = useState(false);
   const fileRef = useRef();
 
-  const handleFileChange = (e) => { const f = e.target.files?.[0]; if (f) setFile(f); };
+  const handleFileChange = e => { const f = e.target.files?.[0]; if (f) setFile(f); };
 
   const handlePreview = async () => {
     if (!file) return toast.error('Please select a file');
@@ -56,10 +82,8 @@ function ImportModal({ onClose, onImported, properties }) {
       fd.append('file', file); fd.append('platform', platform);
       const { data } = await api.post('/import/csv/preview', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setPreview(data);
-      const m = {};
-      data.recognized.forEach(r => { m[r.listingName] = r.propertyId; });
-      setMapping(m);
-      setStep(3);
+      const m = {}; data.recognized.forEach(r => { m[r.listingName] = r.propertyId; });
+      setMapping(m); setStep(3);
     } catch (err) { toast.error(err.response?.data?.message || 'Could not read file'); }
     finally { setLoading(false); }
   };
@@ -81,7 +105,6 @@ function ImportModal({ onClose, onImported, properties }) {
 
   return (
     <Modal isOpen title="Import Bookings" onClose={onClose} size="md">
-      {/* Step indicator */}
       <div className="flex items-center gap-1 mb-5">
         {['Platform', 'Upload', 'Map', 'Done'].map((label, i) => {
           const s = i + 1; const active = step === s; const done = step > s;
@@ -89,7 +112,7 @@ function ImportModal({ onClose, onImported, properties }) {
             <React.Fragment key={label}>
               <div className="flex items-center gap-1">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={done ? { background: '#10B981', color: 'white' } : active ? { background: 'var(--color-primary)', color: 'white' } : { background: '#F3F4F6', color: '#9CA3AF' }}>
+                  style={done ? { background: '#10B981', color: '#fff' } : active ? { background: 'var(--color-primary)', color: '#fff' } : { background: '#F3F4F6', color: '#9CA3AF' }}>
                   {done ? <Check size={12} /> : s}
                 </div>
                 <span className="text-xs font-medium hidden sm:block" style={{ color: active ? 'var(--color-primary)' : '#9CA3AF' }}>{label}</span>
@@ -116,11 +139,11 @@ function ImportModal({ onClose, onImported, properties }) {
       {step === 2 && (
         <div className="space-y-4">
           <div className="rounded-xl p-2 text-xs font-semibold text-center" style={{ background: `${PL[platform]}15`, color: PL[platform] }}>Importing from {platform}</div>
-          <p className="text-sm text-gray-500">Upload the CSV/Excel file from {platform}'s earnings or reservations section.</p>
           <div className="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
             style={{ borderColor: file ? 'var(--color-primary)' : '#E5E7EB' }} onClick={() => fileRef.current?.click()}>
             <Upload size={28} className="mx-auto mb-2" style={{ color: file ? 'var(--color-primary)' : '#D1D5DB' }} />
-            {file ? <><div className="text-sm font-bold" style={{ color: 'var(--color-primary)' }}>{file.name}</div><div className="text-xs text-gray-400 mt-0.5">{(file.size / 1024).toFixed(1)} KB</div></>
+            {file
+              ? <><div className="text-sm font-bold" style={{ color: 'var(--color-primary)' }}>{file.name}</div><div className="text-xs text-gray-400 mt-0.5">{(file.size / 1024).toFixed(1)} KB</div></>
               : <><div className="text-sm font-semibold text-gray-500">Tap to select file</div><div className="text-xs text-gray-400 mt-0.5">CSV or Excel (.xlsx)</div></>}
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
           </div>
@@ -136,12 +159,12 @@ function ImportModal({ onClose, onImported, properties }) {
           <div className="text-sm text-gray-500">Found <strong>{preview.totalRows}</strong> bookings across <strong>{preview.listingNames.length}</strong> listing{preview.listingNames.length !== 1 ? 's' : ''}.</div>
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {preview.listingNames.map(name => {
-              const isRecognized = preview.recognized.find(r => r.listingName === name);
+              const isRec = preview.recognized.find(r => r.listingName === name);
               return (
                 <div key={name} className="rounded-xl p-3" style={{ background: '#F9FAFB' }}>
                   <div className="text-xs font-bold text-gray-700 mb-2 truncate">{name}</div>
-                  {isRecognized
-                    ? <div className="flex items-center gap-1.5 text-xs text-green-600 font-semibold"><Check size={12} /> Auto-matched to "{isRecognized.propertyName}"</div>
+                  {isRec
+                    ? <div className="flex items-center gap-1.5 text-xs text-green-600 font-semibold"><Check size={12} /> Auto-matched to "{isRec.propertyName}"</div>
                     : <select className="input text-sm w-full" value={mapping[name] || ''} onChange={e => setMapping({ ...mapping, [name]: e.target.value })}>
                         <option value="">-- Select your property --</option>
                         {properties.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
@@ -150,7 +173,6 @@ function ImportModal({ onClose, onImported, properties }) {
               );
             })}
           </div>
-          <div className="text-xs text-gray-400">New mappings are saved — future imports auto-match.</div>
           <div className="flex gap-2">
             <button onClick={() => setStep(2)} className="btn-secondary flex-1 gap-1"><ArrowLeft size={15} /> Back</button>
             <button onClick={handleImport} disabled={loading} className="btn-primary flex-1 gap-1 disabled:opacity-40">{loading ? 'Importing...' : <><Upload size={15} /> Import</>}</button>
@@ -182,7 +204,7 @@ function ImportModal({ onClose, onImported, properties }) {
   );
 }
 
-// ─── Main Earnings / Profit Dashboard ────────────────────────────────────────
+// ─── Main Profit Dashboard ────────────────────────────────────────────────────
 export default function Earnings() {
   const queryClient = useQueryClient();
   const [range, setRange] = useState('all');
@@ -190,7 +212,6 @@ export default function Earnings() {
   const [showAddOverall, setShowAddOverall] = useState(false);
 
   const { start, end } = getDateRange(range);
-
   const profitParams = new URLSearchParams();
   if (start) profitParams.set('startDate', start);
   if (end) profitParams.set('endDate', end);
@@ -232,11 +253,9 @@ export default function Earnings() {
       if (end) params.set('endDate', end);
       const response = await api.get(`/bookings/export?${params}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const a = document.createElement('a');
-      a.href = url;
+      const a = document.createElement('a'); a.href = url;
       a.download = `hostos-report-${new Date().toISOString().split('T')[0]}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      a.click(); window.URL.revokeObjectURL(url);
       toast.success('Exported!');
     } catch { toast.error('Export failed'); }
   };
@@ -254,133 +273,118 @@ export default function Earnings() {
   } = profitData || {};
 
   const isProfitable = netProfit >= 0;
-  const marginPct = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0;
-
-  const RANGES = [
-    { value: '3m', label: 'Last 3M' },
-    { value: '6m', label: 'Last 6M' },
-    { value: 'year', label: 'This Year' },
-    { value: 'all', label: 'All Time' },
-  ];
-
-  const hasAnyData = totalRevenue > 0 || totalExpenses > 0 || overallExpenses.length > 0;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    /* max-w-3xl keeps the dashboard readable at any screen width */
+    <div className="max-w-3xl mx-auto space-y-5 animate-fade-in">
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-900">Earnings</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Profit overview across all properties</p>
+      {/* ── Business Overview ─────────────────────────────────────────────── */}
+      <div className="card">
+        {/* Section header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-gray-900">Business Overview</h2>
+          <div className="flex items-center gap-2">
+            <RangeDropdown value={range} onChange={setRange} />
+            <button onClick={() => setShowImport(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 active:scale-95 transition-all">
+              <Upload size={13} /> Import
+            </button>
+            <button onClick={handleExport}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white active:scale-95 transition-all"
+              style={{ background: 'var(--color-primary)' }}>
+              <Download size={13} /> Export
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <button onClick={() => setShowImport(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 active:scale-95 transition-all">
-            <Upload size={13} /> Import
-          </button>
-          <button onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 active:scale-95 transition-all">
-            <Download size={13} /> Export
-          </button>
-        </div>
-      </div>
 
-      {/* ── Date range pills ── */}
-      <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: '#F3F4F6' }}>
-        {RANGES.map(r => (
-          <button key={r.value} onClick={() => setRange(r.value)}
-            className="flex-1 py-2 rounded-xl text-xs font-bold transition-all duration-200"
-            style={range === r.value
-              ? { background: 'white', color: 'var(--color-primary)', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }
-              : { color: '#9CA3AF' }}>
-            {r.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Hero financials card ── */}
-      <div className="rounded-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)' }}>
-        <div className="px-5 pt-5 pb-4">
-          <div className="text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.65)' }}>Net Profit</div>
-          <div className="flex items-end gap-2 mb-1">
-            <div className="text-3xl font-extrabold text-white tracking-tight">
-              ₹{Math.abs(netProfit).toLocaleString('en-IN')}
-            </div>
-            {totalRevenue > 0 && (
-              <div className="mb-1 px-2 py-0.5 rounded-full text-xs font-bold"
-                style={{ background: isProfitable ? 'rgba(255,255,255,0.2)' : 'rgba(239,68,68,0.3)', color: 'white' }}>
-                {isProfitable ? '+' : '-'}{Math.abs(marginPct)}%
+        {/* 3 stat blocks */}
+        <div className="grid grid-cols-3 divide-x divide-gray-100">
+          {[
+            { label: 'TOTAL REVENUE',  value: totalRevenue,  color: 'var(--color-primary)' },
+            { label: 'TOTAL EXPENSES', value: totalExpenses, color: totalExpenses > 0 ? '#EF4444' : '#9CA3AF' },
+            { label: 'NET PROFIT',     value: netProfit,     color: isProfitable ? '#10B981' : '#EF4444' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="px-4 py-3 first:pl-0 last:pr-0">
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</div>
+              <div className="text-xl md:text-2xl font-extrabold tracking-tight" style={{ color }}>
+                ₹{Math.abs(value).toLocaleString('en-IN')}
               </div>
-            )}
-          </div>
-          {!isProfitable && <div className="text-xs font-semibold text-red-300 mb-2">Running at a loss</div>}
-        </div>
-
-        {/* Revenue / Expenses sub-stats */}
-        <div className="grid grid-cols-2 divide-x" style={{ borderTop: '1px solid rgba(255,255,255,0.15)', divideColor: 'rgba(255,255,255,0.15)' }}>
-          <div className="px-5 py-3" style={{ borderRight: '1px solid rgba(255,255,255,0.15)' }}>
-            <div className="text-xs font-medium mb-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>Revenue</div>
-            <div className="text-lg font-extrabold text-white">₹{totalRevenue.toLocaleString('en-IN')}</div>
-          </div>
-          <div className="px-5 py-3">
-            <div className="text-xs font-medium mb-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>Expenses</div>
-            <div className="text-lg font-extrabold" style={{ color: totalExpenses > 0 ? '#FCA5A5' : 'white' }}>
-              ₹{totalExpenses.toLocaleString('en-IN')}
+              {label === 'NET PROFIT' && !isProfitable && value !== 0 && (
+                <div className="text-xs text-red-400 font-medium mt-0.5">Running at a loss</div>
+              )}
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Property Performance ── */}
+      {/* ── Property Performance ──────────────────────────────────────────── */}
       {propertyStats.length > 0 && (
         <div className="card">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="section-title">Property Performance</h3>
-            <span className="text-xs text-gray-400">{propertyStats.length} propert{propertyStats.length !== 1 ? 'ies' : 'y'}</span>
+          <h2 className="text-base font-bold text-gray-900 mb-4">Property Performance</h2>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-100">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: '#F9FAFB' }}>
+                  {['Property', 'Bookings Revenue', 'Expenses', 'Margin', 'Status'].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide first:rounded-tl-xl last:rounded-tr-xl">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {propertyStats.map(p => {
+                  const cfg = STATUS_CFG[p.status] || STATUS_CFG['Low Margin'];
+                  return (
+                    <tr key={p.propertyId} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3.5 font-semibold text-gray-900">{p.propertyName}</td>
+                      <td className="px-4 py-3.5 font-semibold" style={{ color: 'var(--color-primary)' }}>₹{p.revenue.toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-3.5 font-semibold" style={{ color: p.totalExpenses > 0 ? '#EF4444' : '#9CA3AF' }}>₹{p.totalExpenses.toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-3.5 font-bold" style={{ color: cfg.text }}>{p.margin}%</td>
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+                          style={{ background: cfg.bg, color: cfg.text }}>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.dot }} />
+                          {p.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <div className="space-y-3">
-            {propertyStats.map((p) => {
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2.5">
+            {propertyStats.map(p => {
               const cfg = STATUS_CFG[p.status] || STATUS_CFG['Low Margin'];
-              const marginWidth = Math.min(Math.max(p.margin, 0), 100);
               return (
-                <div key={p.propertyId} className="rounded-xl overflow-hidden"
-                  style={{ border: `1px solid ${cfg.border}30`, background: cfg.bg }}>
-                  {/* Top row */}
-                  <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                    <div className="font-bold text-sm text-gray-900 truncate flex-1 mr-3">{p.propertyName}</div>
-                    <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0"
-                      style={{ background: cfg.badge, color: cfg.text }}>
+                <div key={p.propertyId} className="rounded-xl p-3.5" style={{ background: '#F9FAFB', borderLeft: `3px solid ${cfg.dot}` }}>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="font-bold text-sm text-gray-900">{p.propertyName}</div>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                      style={{ background: cfg.bg, color: cfg.text }}>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.dot }} />
                       {p.status}
                     </span>
                   </div>
-
-                  {/* Stats row */}
-                  <div className="grid grid-cols-3 text-center px-2 pb-2">
-                    <div className="py-1">
+                  <div className="grid grid-cols-3 text-center gap-2">
+                    <div>
                       <div className="text-xs text-gray-400 mb-0.5">Revenue</div>
-                      <div className="text-sm font-extrabold" style={{ color: 'var(--color-primary)' }}>
-                        ₹{p.revenue.toLocaleString('en-IN')}
-                      </div>
+                      <div className="text-sm font-bold" style={{ color: 'var(--color-primary)' }}>₹{p.revenue.toLocaleString('en-IN')}</div>
                     </div>
-                    <div className="py-1" style={{ borderLeft: `1px solid ${cfg.border}25`, borderRight: `1px solid ${cfg.border}25` }}>
+                    <div>
                       <div className="text-xs text-gray-400 mb-0.5">Expenses</div>
-                      <div className="text-sm font-extrabold" style={{ color: p.totalExpenses > 0 ? '#EF4444' : '#9CA3AF' }}>
-                        ₹{p.totalExpenses.toLocaleString('en-IN')}
-                      </div>
+                      <div className="text-sm font-bold" style={{ color: p.totalExpenses > 0 ? '#EF4444' : '#9CA3AF' }}>₹{p.totalExpenses.toLocaleString('en-IN')}</div>
                     </div>
-                    <div className="py-1">
+                    <div>
                       <div className="text-xs text-gray-400 mb-0.5">Margin</div>
-                      <div className="text-sm font-extrabold" style={{ color: cfg.text }}>{p.margin}%</div>
+                      <div className="text-sm font-bold" style={{ color: cfg.text }}>{p.margin}%</div>
                     </div>
                   </div>
-
-                  {/* Margin bar */}
-                  <div className="h-1.5 mx-4 mb-3 rounded-full overflow-hidden" style={{ background: `${cfg.dot}20` }}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${marginWidth}%`, background: `linear-gradient(90deg, ${cfg.dot}80, ${cfg.dot})` }} />
+                  <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ background: `${cfg.dot}20` }}>
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(Math.max(p.margin, 0), 100)}%`, background: cfg.dot }} />
                   </div>
                 </div>
               );
@@ -389,81 +393,88 @@ export default function Earnings() {
         </div>
       )}
 
-      {/* ── Insights ── */}
+      {/* ── Insights ─────────────────────────────────────────────────────── */}
       {(insights.topPerformer || insights.needsAttention || insights.underperforming) && (
-        <div className="card">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--color-primary-light)' }}>
-              <Zap size={13} style={{ color: 'var(--color-primary)' }} />
-            </div>
-            <h3 className="section-title">Insights</h3>
-          </div>
-          <div className="space-y-2.5">
+        <div>
+          <h2 className="text-base font-bold text-gray-900 mb-3">Insights</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
             {insights.topPerformer && (
-              <div className="flex gap-3 p-3 rounded-xl" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
-                  <TrendingUp size={17} className="text-white" />
+              <div className="card" style={{ borderTop: '3px solid #10B981' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp size={15} style={{ color: '#10B981' }} />
+                  <span className="text-sm font-bold text-gray-800">Top Performer</span>
                 </div>
-                <div>
-                  <div className="text-xs font-semibold text-green-600 uppercase tracking-wide">Top Performer</div>
-                  <div className="text-sm font-bold text-green-900 mt-0.5">{insights.topPerformer.name}</div>
-                  <div className="text-xs text-green-700 mt-0.5">{insights.topPerformer.message}</div>
-                </div>
+                <div className="text-sm font-semibold text-gray-700">{insights.topPerformer.name}</div>
+                <div className="text-xs text-gray-500 mt-1 leading-relaxed">{insights.topPerformer.message}</div>
               </div>
             )}
-            {insights.needsAttention && (
-              <div className="flex gap-3 p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}>
-                  <AlertTriangle size={17} className="text-white" />
+
+            {insights.needsAttention ? (
+              <div className="card" style={{ borderTop: '3px solid #F59E0B' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={15} style={{ color: '#F59E0B' }} />
+                  <span className="text-sm font-bold text-gray-800">Needs Attention</span>
                 </div>
-                <div>
-                  <div className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Needs Attention</div>
-                  <div className="text-sm font-bold text-amber-900 mt-0.5">{insights.needsAttention.name}</div>
-                  <div className="text-xs text-amber-700 mt-0.5">{insights.needsAttention.message}</div>
+                <div className="text-sm font-semibold text-gray-700">{insights.needsAttention.name}</div>
+                <div className="text-xs text-gray-500 mt-1 leading-relaxed">{insights.needsAttention.message}</div>
+              </div>
+            ) : insights.topPerformer && (
+              <div className="card border-dashed" style={{ borderTop: '3px solid #E5E7EB' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={15} className="text-gray-300" />
+                  <span className="text-sm font-bold text-gray-400">Needs Attention</span>
                 </div>
+                <div className="text-xs text-gray-400">All properties are performing well.</div>
               </div>
             )}
-            {insights.underperforming && (
-              <div className="flex gap-3 p-3 rounded-xl" style={{ background: '#FFF5F5', border: '1px solid #FECACA' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)' }}>
-                  <TrendingDown size={17} className="text-white" />
+
+            {insights.underperforming ? (
+              <div className="card" style={{ borderTop: '3px solid #EF4444' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingDown size={15} style={{ color: '#EF4444' }} />
+                  <span className="text-sm font-bold text-gray-800">Underperforming</span>
                 </div>
-                <div>
-                  <div className="text-xs font-semibold text-red-600 uppercase tracking-wide">Underperforming</div>
-                  <div className="text-sm font-bold text-red-900 mt-0.5">{insights.underperforming.name}</div>
-                  <div className="text-xs text-red-700 mt-0.5">{insights.underperforming.message}</div>
+                <div className="text-sm font-semibold text-gray-700">{insights.underperforming.name}</div>
+                <div className="text-xs text-gray-500 mt-1 leading-relaxed">{insights.underperforming.message}</div>
+              </div>
+            ) : insights.topPerformer && (
+              <div className="card border-dashed" style={{ borderTop: '3px solid #E5E7EB' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingDown size={15} className="text-gray-300" />
+                  <span className="text-sm font-bold text-gray-400">Underperforming</span>
                 </div>
+                <div className="text-xs text-gray-400">No underperforming properties.</div>
               </div>
             )}
           </div>
+
+          <p className="text-center text-xs text-gray-400 font-medium mt-3 italic">
+            See what's profitable. Fix what's not.
+          </p>
         </div>
       )}
 
-      {/* ── Platform Breakdown ── */}
+      {/* ── Platform Breakdown ───────────────────────────────────────────── */}
       {platformBreakdown.length > 0 && (
         <div className="card">
-          <h3 className="section-title mb-3">Revenue by Platform</h3>
-          <div className="space-y-3">
+          <h2 className="text-base font-bold text-gray-900 mb-4">Revenue by Platform</h2>
+          <div className="space-y-3.5">
             {platformBreakdown.map(({ platform, total, count }) => {
-              const maxTotal = platformBreakdown[0]?.total || 1;
-              const barPct = Math.round((total / maxTotal) * 100);
               const color = PLATFORM_COLORS[platform] || '#6B7280';
+              const pct = Math.round((total / (platformBreakdown[0]?.total || 1)) * 100);
               return (
                 <div key={platform}>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
                       <span className="text-sm font-semibold text-gray-700">{platform}</span>
-                      <span className="text-xs text-gray-400">{count} stay{count !== 1 ? 's' : ''}</span>
+                      <span className="text-xs text-gray-400">{count} booking{count !== 1 ? 's' : ''}</span>
                     </div>
                     <span className="text-sm font-bold" style={{ color }}>₹{total.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: `${color}18` }}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${barPct}%`, background: `linear-gradient(90deg, ${color}90, ${color})` }} />
+                  <div className="h-2 rounded-full overflow-hidden bg-gray-100">
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
                   </div>
                 </div>
               );
@@ -472,48 +483,51 @@ export default function Earnings() {
         </div>
       )}
 
-      {/* ── Overall Expenses ── */}
+      {/* ── Overall Expenses ─────────────────────────────────────────────── */}
       <div className="card">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="section-title">Overall Expenses</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Overall Expenses</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Shared costs split across properties by revenue</p>
+          </div>
           <button onClick={() => setShowAddOverall(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white active:scale-95 transition-transform"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white active:scale-95 transition-all"
             style={{ background: 'var(--color-primary)' }}>
-            <Plus size={12} /> Add
+            <Plus size={12} /> Add Expense
           </button>
         </div>
 
         {overallExpenses.length === 0 ? (
-          <div className="py-7 text-center">
-            <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: '#F3F4F6' }}>
-              <IndianRupee size={22} className="text-gray-300" />
+          <div className="py-8 text-center border-2 border-dashed border-gray-100 rounded-xl">
+            <div className="w-10 h-10 rounded-xl mx-auto mb-2.5 flex items-center justify-center bg-gray-100">
+              <IndianRupee size={18} className="text-gray-400" />
             </div>
-            <p className="text-sm font-semibold text-gray-400">No overall expenses yet</p>
-            <p className="text-xs text-gray-300 mt-1">Split automatically across properties by revenue</p>
+            <p className="text-sm font-semibold text-gray-500">No overall expenses yet</p>
+            <p className="text-xs text-gray-400 mt-1">E.g. software tools, insurance, marketing</p>
           </div>
         ) : (
           <>
-            <div className="space-y-1">
+            <div className="divide-y divide-gray-50">
               {overallExpenses.map(exp => {
                 const meta = CATEGORY_META[exp.category] || CATEGORY_META.Other;
                 const Icon = meta.icon;
                 return (
-                  <div key={exp._id} className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                  <div key={exp._id} className="flex items-center gap-3 py-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{ background: `${meta.color}15` }}>
-                      <Icon size={14} style={{ color: meta.color }} />
+                      <Icon size={15} style={{ color: meta.color }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-gray-900 truncate">{exp.description}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs font-medium px-1.5 py-0.5 rounded-md"
-                          style={{ background: `${meta.color}15`, color: meta.color }}>
-                          {exp.category}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-md"
+                          style={{ background: `${meta.color}15`, color: meta.color }}>{exp.category}</span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
-                        <span className="text-xs text-gray-400">{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-3 flex-shrink-0">
                       <span className="text-sm font-bold text-red-500">₹{exp.amount.toLocaleString('en-IN')}</span>
                       <button onClick={() => handleDeleteExpense(exp._id)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors group">
@@ -524,8 +538,8 @@ export default function Earnings() {
                 );
               })}
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-400">Total overall expenses</span>
+            <div className="mt-1 pt-3 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">Total</span>
               <span className="text-sm font-extrabold text-red-500">
                 ₹{overallExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString('en-IN')}
               </span>
@@ -534,29 +548,25 @@ export default function Earnings() {
         )}
       </div>
 
-      {/* ── Empty state ── */}
-      {!isLoading && !hasAnyData && (
-        <div className="card text-center py-12">
-          <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+      {/* ── Empty state ──────────────────────────────────────────────────── */}
+      {!isLoading && totalRevenue === 0 && propertyStats.length === 0 && overallExpenses.length === 0 && (
+        <div className="card text-center py-14">
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
             style={{ background: 'var(--color-primary-light)' }}>
-            <IndianRupee size={28} style={{ color: 'var(--color-primary)' }} />
+            <IndianRupee size={26} style={{ color: 'var(--color-primary)' }} />
           </div>
-          <p className="text-base font-bold text-gray-700">No data yet</p>
-          <p className="text-xs text-gray-400 mt-1.5">Import bookings or add expenses to see your profit dashboard</p>
+          <p className="text-base font-bold text-gray-700">Nothing here yet</p>
+          <p className="text-xs text-gray-400 mt-1.5 max-w-xs mx-auto">Import your bookings to see revenue, expenses, and profit broken down by property.</p>
           <button onClick={() => setShowImport(true)} className="btn-primary mt-5 mx-auto px-6">
             <Upload size={15} /> Import Bookings
           </button>
         </div>
       )}
 
-      {/* ── Modals ── */}
-      {showImport && (
-        <ImportModal onClose={() => setShowImport(false)} properties={properties} onImported={invalidateAll} />
-      )}
+      {/* ── Modals ───────────────────────────────────────────────────────── */}
+      {showImport && <ImportModal onClose={() => setShowImport(false)} properties={properties} onImported={invalidateAll} />}
       {showAddOverall && (
-        <ExpenseModal
-          defaultType="overall"
-          properties={properties}
+        <ExpenseModal defaultType="overall" properties={properties}
           onClose={() => setShowAddOverall(false)}
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ['profit'] });
