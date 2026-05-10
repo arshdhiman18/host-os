@@ -5,6 +5,14 @@ import { IndianRupee, Users, TrendingUp, Clock, ArrowUpRight, Home } from 'lucid
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import { format } from 'date-fns';
+import { useAuth } from '../../context/AuthContext';
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 const StatCard = ({ icon: Icon, label, value, sub, color = 'var(--color-primary)', bg = 'var(--color-primary-light)' }) => (
   <div className="card animate-fade-in-up">
@@ -38,6 +46,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Overview({ onTabChange }) {
+  const { user } = useAuth();
+  const firstName = user?.name?.split(' ')[0] || 'there';
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['booking-stats'],
     queryFn: () => api.get('/bookings/stats').then(r => r.data),
@@ -59,6 +70,12 @@ export default function Overview({ onTabChange }) {
 
   return (
     <div className="space-y-5 animate-fade-in">
+      {/* Greeting */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">{getGreeting()}, {firstName}</h2>
+        <p className="text-sm text-gray-400 mt-0.5">Here's what's happening with your properties.</p>
+      </div>
+
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
         <StatCard

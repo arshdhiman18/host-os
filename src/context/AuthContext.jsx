@@ -22,6 +22,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => { fetchMe(); }, [fetchMe]);
 
+  // When backend returns 402, re-sync user from server so frontend gate reflects reality
+  useEffect(() => {
+    window.addEventListener('hostos:subscription-expired', fetchMe);
+    return () => window.removeEventListener('hostos:subscription-expired', fetchMe);
+  }, [fetchMe]);
+
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
     localStorage.setItem('hostos_token', data.token);

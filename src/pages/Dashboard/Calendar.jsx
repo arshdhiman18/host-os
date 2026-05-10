@@ -93,10 +93,7 @@ export default function Calendar() {
     <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-900">Calendar</h2>
-          <p className="text-xs text-gray-400">Bookings across your properties</p>
-        </div>
+        <p className="text-xs font-semibold text-gray-400">Bookings across your properties</p>
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setCurrentDate(subMonths(currentDate, 1))}

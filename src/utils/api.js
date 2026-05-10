@@ -12,13 +12,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally → logout
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('hostos_token');
       window.location.href = '/login';
+    }
+    if (err.response?.status === 402) {
+      // Re-sync user state from server so the frontend gate reflects reality
+      window.dispatchEvent(new CustomEvent('hostos:subscription-expired'));
     }
     return Promise.reject(err);
   }

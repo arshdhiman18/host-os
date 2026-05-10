@@ -30,7 +30,7 @@ const features = [
   'Unique guest links per property',
 ];
 
-export default function UpgradeModal({ isOpen, onClose, canClose = true, subscriptionStatus }) {
+export default function UpgradeModal({ isOpen, onClose, subscriptionStatus }) {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
   const { refreshUser } = useAuth();
@@ -88,7 +88,7 @@ export default function UpgradeModal({ isOpen, onClose, canClose = true, subscri
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center animate-fade-in">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={canClose ? onClose : undefined}
+        onClick={onClose}
       />
 
       <div className="relative w-full max-w-md bg-white rounded-t-3xl md:rounded-2xl shadow-2xl animate-fade-in-up">
@@ -97,15 +97,12 @@ export default function UpgradeModal({ isOpen, onClose, canClose = true, subscri
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
-        {/* Close — hidden when user has no access */}
-        {canClose && (
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
-          >
-            <X size={16} className="text-gray-500" />
-          </button>
-        )}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+        >
+          <X size={16} className="text-gray-500" />
+        </button>
 
         <div className="px-6 pt-6 pb-8">
           {/* Header */}

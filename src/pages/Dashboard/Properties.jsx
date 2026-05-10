@@ -775,10 +775,7 @@ export default function Properties() {
     <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-900">Properties</h2>
-          <p className="text-xs text-gray-400">{properties.length} active</p>
-        </div>
+        <p className="text-xs font-semibold text-gray-400">{properties.length} active</p>
         <button onClick={() => setShowForm(true)} className="btn-primary text-sm px-3 py-2 rounded-xl gap-1.5">
           <Plus size={16} /> Add Property
         </button>

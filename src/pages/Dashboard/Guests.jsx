@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import {
   Search, Download, Plus, Trash2, Phone,
-  Users, FileText, ThumbsUp, ThumbsDown, MessageCircle, Edit3, PhoneCall
+  Users, FileText, ThumbsUp, ThumbsDown, MessageCircle, PhoneCall, Edit3, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -285,6 +285,9 @@ export default function Guests() {
   const [showMsgModal, setShowMsgModal] = useState(false);
   const [addPhoneFor, setAddPhoneFor] = useState(null);
   const [msgTemplate] = useState(DEFAULT_TEMPLATE);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [platformOpen, setPlatformOpen] = useState(false);
+  const [ratingOpen, setRatingOpen] = useState(false);
 
   const { data: bookingsData, isLoading } = useQuery({
     queryKey: ['bookings', platform],
@@ -343,10 +346,7 @@ export default function Guests() {
     <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-900">Guests</h2>
-          <p className="text-xs text-gray-400">{bookingsData?.total || 0} total bookings</p>
-        </div>
+        <p className="text-xs font-semibold text-gray-400">{bookingsData?.total || 0} total bookings</p>
         <div className="flex items-center gap-2">
           <button onClick={handleExport} className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
             <Download size={16} />
@@ -366,43 +366,78 @@ export default function Guests() {
         </button>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input className="input pl-9" placeholder="Search by name or phone..." value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
+      {/* Search + Filters row */}
+      <div className="flex flex-col md:flex-row md:items-center gap-2">
 
-      {/* Filters */}
-      <div className="space-y-2">
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {PLATFORMS.map(p => (
-            <button key={p} onClick={() => setPlatform(p)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${platform === p ? 'text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
-              style={platform === p ? { background: 'var(--color-primary)' } : {}}>
-              {p}
-            </button>
-          ))}
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input className="input pl-9" placeholder="Search by name or phone..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex gap-2">
-          {RATINGS.map(r => (
-            <button key={r} onClick={() => setRatingFilter(r)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                ratingFilter === r
-                  ? r === 'Good' ? 'bg-green-500 text-white border-green-500'
-                    : r === 'Bad' ? 'bg-red-500 text-white border-red-500'
-                    : 'text-white border-transparent'
-                  : r === 'Good' ? 'bg-green-50 text-green-600 border-green-200'
-                    : r === 'Bad' ? 'bg-red-50 text-red-500 border-red-200'
-                    : 'bg-white text-gray-500 border-gray-200'
-              }`}
-              style={ratingFilter === r && r === 'All' ? { background: 'var(--color-primary)', borderColor: 'var(--color-primary)' } : {}}>
-              {r === 'Good' && <ThumbsUp size={11} />}
-              {r === 'Bad' && <ThumbsDown size={11} />}
-              {r}
-            </button>
-          ))}
+
+        {/* Filters — two dropdowns */}
+        <div className="flex items-center gap-2">
+        {/* Platform dropdown */}
+        <div className="relative flex-1 md:flex-none md:w-40">
+          {platformOpen && <div className="fixed inset-0 z-10" onClick={() => setPlatformOpen(false)} />}
+          <button
+            onClick={() => { setPlatformOpen(v => !v); setRatingOpen(false); }}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <span>{platform === 'All' ? 'All Platforms' : platform}</span>
+            <ChevronDown size={13} className={`text-gray-400 transition-transform duration-200 ${platformOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {platformOpen && (
+            <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-xl border border-gray-100 shadow-lg z-20 overflow-hidden py-1">
+              {PLATFORMS.map(p => (
+                <button key={p} onClick={() => { setPlatform(p); setPlatformOpen(false); }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold hover:bg-gray-50 transition-colors"
+                  style={{ color: platform === p ? 'var(--color-primary)' : '#374151' }}>
+                  {p === 'All' ? 'All Platforms' : p}
+                  {platform === p && <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-primary)' }} />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+
+        {/* Rating dropdown */}
+        <div className="relative flex-1 md:flex-none md:w-36">
+          {ratingOpen && <div className="fixed inset-0 z-10" onClick={() => setRatingOpen(false)} />}
+          <button
+            onClick={() => { setRatingOpen(v => !v); setPlatformOpen(false); }}
+            className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors ${
+              ratingFilter === 'Good' ? 'border-green-200 bg-green-50 text-green-700'
+              : ratingFilter === 'Bad' ? 'border-red-200 bg-red-50 text-red-600'
+              : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              {ratingFilter === 'Good' && <ThumbsUp size={11} />}
+              {ratingFilter === 'Bad' && <ThumbsDown size={11} />}
+              {ratingFilter === 'All' ? 'All Ratings' : ratingFilter}
+            </span>
+            <ChevronDown size={13} className={`opacity-50 transition-transform duration-200 ${ratingOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {ratingOpen && (
+            <div className="absolute top-full left-0 mt-1.5 w-full bg-white rounded-xl border border-gray-100 shadow-lg z-20 overflow-hidden py-1">
+              {RATINGS.map(r => (
+                <button key={r} onClick={() => { setRatingFilter(r); setRatingOpen(false); }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold hover:bg-gray-50 transition-colors"
+                  style={{ color: ratingFilter === r ? (r === 'Good' ? '#16a34a' : r === 'Bad' ? '#dc2626' : 'var(--color-primary)') : '#374151' }}>
+                  <span className="flex items-center gap-1.5">
+                    {r === 'Good' && <ThumbsUp size={11} />}
+                    {r === 'Bad' && <ThumbsDown size={11} />}
+                    {r === 'All' ? 'All Ratings' : r}
+                  </span>
+                  {ratingFilter === r && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: ratingFilter === 'Good' ? '#16a34a' : ratingFilter === 'Bad' ? '#dc2626' : 'var(--color-primary)' }} />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        </div>{/* end filters */}
+      </div>{/* end search+filters row */}
 
       {/* List */}
       {isLoading ? (
@@ -416,7 +451,7 @@ export default function Guests() {
         <div className="space-y-2">
           {filtered.map(b => (
             <div key={b._id} className="card cursor-pointer hover:shadow-card-md transition-shadow"
-              onClick={() => setSelectedBooking(b)}>
+              onClick={() => { setSelectedBooking(b); setConfirmDeleteId(null); }}>
               {/* Row 1: avatar + name + amount */}
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 text-sm"
@@ -448,11 +483,18 @@ export default function Guests() {
                 onClick={e => e.stopPropagation()}>
                 {/* WhatsApp or Add Phone */}
                 {toWAPhone(b.guestPhone) ? (
-                  <a href={buildWALink(b.guestPhone, b.guestName, b.propertyId?.name, msgTemplate)}
-                    target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-semibold hover:bg-green-500 hover:text-white transition-colors">
-                    <MessageCircle size={12} /> WhatsApp
-                  </a>
+                  <>
+                    <a href={buildWALink(b.guestPhone, b.guestName, b.propertyId?.name, msgTemplate)}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-semibold hover:bg-green-500 hover:text-white transition-colors">
+                      <MessageCircle size={12} /> WhatsApp
+                    </a>
+                    <button
+                      onClick={() => setAddPhoneFor(b)}
+                      className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-500 transition-colors">
+                      <Edit3 size={12} />
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => setAddPhoneFor(b)}
@@ -470,10 +512,29 @@ export default function Guests() {
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${b.guestRating === 'bad' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-400 hover:text-red-500'}`}>
                   <ThumbsDown size={12} /> Bad
                 </button>
-                <button onClick={() => { if (window.confirm('Delete?')) deleteMutation.mutate(b._id); }}
-                  className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors">
-                  <Trash2 size={13} />
-                </button>
+                {confirmDeleteId === b._id ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-500 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => { deleteMutation.mutate(b._id); setConfirmDeleteId(null); }}
+                      className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteId(b._id)}
+                    className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

@@ -1,7 +1,6 @@
 import React from 'react';
-import { LayoutDashboard, Users, IndianRupee, Home, LogOut, CreditCard, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Users, IndianRupee, Home, CreditCard, CalendarDays } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 const tabs = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,13 +12,7 @@ const tabs = [
 ];
 
 export default function Sidebar({ activeTab, onTabChange }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const { user } = useAuth();
 
   return (
     <aside className="hidden md:flex flex-col w-60 min-h-screen border-r border-gray-100 bg-white fixed left-0 top-0 z-40">
@@ -61,8 +54,8 @@ export default function Sidebar({ activeTab, onTabChange }) {
 
       {/* User info */}
       <div className="border-t border-gray-100 px-4 py-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
             style={{ background: 'var(--color-primary)' }}>
             {user?.name?.[0]?.toUpperCase() || 'H'}
           </div>
@@ -72,20 +65,11 @@ export default function Sidebar({ activeTab, onTabChange }) {
           </div>
         </div>
 
-        {/* Trial badge */}
         {user?.subscriptionStatus === 'trial' && (
-          <div className="badge-warning w-full text-center mb-3 py-1.5 rounded-lg text-xs">
+          <div className="badge-warning w-full text-center mt-3 py-1.5 rounded-lg text-xs">
             {user?.trialDaysLeft}d trial left
           </div>
         )}
-
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all"
-        >
-          <LogOut size={16} />
-          Sign Out
-        </button>
       </div>
     </aside>
   );
