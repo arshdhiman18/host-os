@@ -7,7 +7,7 @@ import {
   Users, Home, IndianRupee, TrendingUp, Search, LogOut, Shield,
   CheckCircle, Clock, XCircle, ThumbsUp, ThumbsDown, FileText,
   LayoutDashboard, UserCheck, Users2, MapPin, CreditCard, Eye, EyeOff,
-  Check, X, AlertCircle, RefreshCw, ChevronDown, ChevronRight,
+  Check, X, AlertCircle, RefreshCw, ChevronDown, ChevronRight, Bell, Send, Megaphone,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -38,6 +38,7 @@ const TABS = [
   { id: 'verifications', label: 'Verify', icon: UserCheck },
   { id: 'cohost', label: 'Co-Host', icon: Users2 },
   { id: 'demographics', label: 'Map', icon: MapPin },
+  { id: 'notify', label: 'Notify', icon: Bell },
 ];
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
@@ -683,6 +684,197 @@ function DemographicsTab() {
   );
 }
 
+// ─── Notify Tab ──────────────────────────────────────────────────────────────
+function NotifyTab() {
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [targetAll, setTargetAll] = useState(true);
+  const [hostSearch, setHostSearch] = useState('');
+  const [selectedHost, setSelectedHost] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const { data: searchData } = useQuery({
+    queryKey: ['notify-host-search', hostSearch],
+    queryFn: () => api.get(`/notifications/admin/hosts?q=${hostSearch}`).then(r => r.data),
+    enabled: !targetAll && hostSearch.length > 0,
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: () =>
+      api.post('/notifications/admin/send', {
+        title: title.trim(),
+        message: message.trim(),
+        recipientId: targetAll ? null : selectedHost?._id || null,
+      }),
+    onSuccess: (res) => {
+      toast.success(`Sent to ${res.data.sent} host${res.data.sent !== 1 ? 's' : ''}`);
+      setTitle('');
+      setMessage('');
+      setSelectedHost(null);
+      setHostSearch('');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to send'),
+  });
+
+  const canSend = title.trim() && message.trim() && (targetAll || selectedHost);
+
+  return (
+    <div className="space-y-5 max-w-lg">
+      <div className="card space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Bell size={16} style={{ color: 'var(--color-primary)' }} />
+          <h2 className="text-base font-bold text-gray-900">Send Notification</h2>
+        </div>
+
+        {/* Target */}
+        <div className="input-group">
+          <label className="label">Send to</label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setTargetAll(true); setSelectedHost(null); setHostSearch(''); }}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${targetAll ? 'text-white border-transparent' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}
+              style={targetAll ? { background: 'var(--color-primary)', borderColor: 'var(--color-primary)' } : {}}
+            >
+              All Hosts
+            </button>
+            <button
+              onClick={() => setTargetAll(false)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${!targetAll ? 'text-white border-transparent' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}
+              style={!targetAll ? { background: 'var(--color-primary)', borderColor: 'var(--color-primary)' } : {}}
+            >
+              Specific Host
+            </button>
+          </div>
+        </div>
+
+        {/* Host search (when specific) */}
+        {!targetAll && (
+          <div className="input-group relative">
+            <label className="label">Select host</label>
+            {selectedHost ? (
+              <div className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  style={{ background: 'var(--color-primary)' }}>
+                  {selectedHost.name[0].toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 truncate">{selectedHost.name}</div>
+                  <div className="text-xs text-gray-400 truncate">{selectedHost.email}</div>
+                </div>
+                <button onClick={() => setSelectedHost(null)}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-200">
+                  <X size={13} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  className="input pl-9 text-sm"
+                  placeholder="Search by name or email…"
+                  value={hostSearch}
+                  onChange={e => { setHostSearch(e.target.value); setSearchOpen(true); }}
+                  onFocus={() => setSearchOpen(true)}
+                />
+                {searchOpen && searchData?.hosts?.length > 0 && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setSearchOpen(false)} />
+                    <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white rounded-xl border border-gray-100 shadow-xl overflow-hidden">
+                      {searchData.hosts.map(h => (
+                        <button key={h._id}
+                          onClick={() => { setSelectedHost(h); setSearchOpen(false); setHostSearch(''); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                            style={{ background: 'var(--color-primary)' }}>
+                            {h.name[0].toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">{h.name}</div>
+                            <div className="text-xs text-gray-400 truncate">{h.email}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Title */}
+        <div className="input-group">
+          <label className="label">Title</label>
+          <input
+            className="input text-sm"
+            placeholder="e.g. Scheduled maintenance tonight"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            maxLength={80}
+          />
+          <div className="text-right text-xs text-gray-300 mt-1">{title.length}/80</div>
+        </div>
+
+        {/* Message */}
+        <div className="input-group">
+          <label className="label">Message</label>
+          <textarea
+            className="input resize-none text-sm"
+            rows={4}
+            placeholder="Write your message to the hosts…"
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            maxLength={400}
+          />
+          <div className="text-right text-xs text-gray-300 mt-1">{message.length}/400</div>
+        </div>
+
+        {/* Preview */}
+        {(title || message) && (
+          <div className="rounded-xl p-4 border border-dashed border-gray-200 bg-gray-50">
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Preview</div>
+            <div className="flex gap-3">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: 'var(--color-primary-light)' }}>
+                <Megaphone size={16} style={{ color: 'var(--color-primary)' }} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-gray-900">{title || '—'}</div>
+                <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{message || '—'}</div>
+                <div className="text-xs text-gray-300 mt-1">just now</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => sendMutation.mutate()}
+          disabled={!canSend || sendMutation.isPending}
+          className="btn-primary w-full py-3 font-bold flex items-center justify-center gap-2 disabled:opacity-40"
+        >
+          {sendMutation.isPending ? (
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Send size={15} />
+          )}
+          {sendMutation.isPending
+            ? 'Sending…'
+            : targetAll
+            ? 'Send to All Hosts'
+            : selectedHost
+            ? `Send to ${selectedHost.name}`
+            : 'Send Notification'}
+        </button>
+      </div>
+
+      <p className="text-xs text-gray-400 text-center">
+        Hosts will receive an in-app notification. Push notifications will be delivered to those who have enabled them.
+      </p>
+    </div>
+  );
+}
+
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function Admin() {
   const { user, logout } = useAuth();
@@ -759,6 +951,7 @@ export default function Admin() {
         {activeTab === 'verifications' && <VerificationsTab />}
         {activeTab === 'cohost' && <CoHostTab />}
         {activeTab === 'demographics' && <DemographicsTab />}
+        {activeTab === 'notify' && <NotifyTab />}
       </div>
     </div>
   );

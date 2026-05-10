@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import BottomNav from './BottomNav';
 import Sidebar from './Sidebar';
+import NotificationBell from './NotificationBell';
+import PushPermission from './PushPermission';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, ChevronDown, Headphones, Zap, X, Phone, Mail, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -129,6 +131,7 @@ export default function Layout({ activeTab, onTabChange, children }) {
                 {user?.trialDaysLeft}d left
               </span>
             )}
+            <NotificationBell onNavigate={onTabChange} />
             <div className="relative">
               <button
                 onClick={() => setProfileOpen(v => !v)}
@@ -154,6 +157,7 @@ export default function Layout({ activeTab, onTabChange, children }) {
                 Subscription Expired
               </span>
             )}
+            <NotificationBell onNavigate={onTabChange} />
             <div className="relative">
               <button
                 onClick={() => setProfileOpen(v => !v)}
@@ -176,6 +180,7 @@ export default function Layout({ activeTab, onTabChange, children }) {
       </div>
 
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} />
+      <PushPermission />
 
       {/* Change Password modal */}
       {changePassOpen && (
