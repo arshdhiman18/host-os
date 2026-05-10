@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import {
-  Search, Download, Plus, Trash2, Phone,
+  Search, Download, Plus, Trash2,
   Users, FileText, ThumbsUp, ThumbsDown, MessageCircle, PhoneCall, Edit3, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -83,9 +83,47 @@ function MessageTemplateModal({ guests, onClose }) {
 }
 
 // ─── Guest Detail Modal ───────────────────────────────────────────────────────
-function GuestDetailModal({ booking, onClose, onRatingChange, msgTemplate }) {
+function GuestDetailModal({ booking, onClose, onRatingChange, onAmountChange, onPhoneChange, msgTemplate }) {
+  const [editAmount, setEditAmount] = useState(false);
+  const [amountInput, setAmountInput] = useState('');
+  const [amountLoading, setAmountLoading] = useState(false);
+  const [editPhone, setEditPhone] = useState(false);
+  const [phoneInput, setPhoneInput] = useState('');
+  const [phoneLoading, setPhoneLoading] = useState(false);
+
   if (!booking) return null;
   const link = buildWALink(booking.guestPhone, booking.guestName, booking.propertyId?.name, msgTemplate);
+
+  const handleSaveAmount = async () => {
+    const val = Number(amountInput);
+    if (!amountInput || isNaN(val) || val <= 0) { toast.error('Enter a valid amount'); return; }
+    setAmountLoading(true);
+    try {
+      await api.patch(`/bookings/${booking._id}/amount`, { amount: val });
+      toast.success('Amount confirmed ✓');
+      onAmountChange(booking._id, val);
+      setEditAmount(false);
+    } catch {
+      toast.error('Failed to save');
+    } finally {
+      setAmountLoading(false);
+    }
+  };
+
+  const handleSavePhone = async () => {
+    if (!phoneInput.trim()) { toast.error('Enter a phone number'); return; }
+    setPhoneLoading(true);
+    try {
+      await api.put(`/bookings/${booking._id}`, { guestPhone: phoneInput.trim() });
+      toast.success('Phone saved ✓');
+      onPhoneChange(booking._id, phoneInput.trim());
+      setEditPhone(false);
+    } catch {
+      toast.error('Failed to save');
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
 
   return (
     <Modal isOpen={!!booking} onClose={onClose} title="Guest Details" size="md">
@@ -116,9 +154,48 @@ function GuestDetailModal({ booking, onClose, onRatingChange, msgTemplate }) {
 
         <div className="divider" />
 
+        {/* Phone — editable full-width row */}
+        <div className="rounded-xl px-3 py-2.5 bg-gray-50 flex items-center justify-between gap-3">
+          {editPhone ? (
+            <div className="flex flex-col gap-2 w-full">
+              <input
+                type="tel"
+                className="input text-sm py-1.5"
+                placeholder="e.g. +91 98765 43210"
+                inputMode="tel"
+                value={phoneInput}
+                onChange={e => setPhoneInput(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button onClick={handleSavePhone} disabled={phoneLoading}
+                  className="flex-1 py-1.5 rounded-xl text-xs font-bold text-white bg-green-500 hover:bg-green-600 transition-colors">
+                  {phoneLoading ? 'Saving...' : '✓ Save Phone'}
+                </button>
+                <button onClick={() => setEditPhone(false)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <div className="text-xs text-gray-400 font-medium">Phone</div>
+                <div className="text-sm font-semibold text-gray-800 mt-0.5">{booking.guestPhone || '—'}</div>
+              </div>
+              <button
+                onClick={() => { setEditPhone(true); setPhoneInput(booking.guestPhone || ''); }}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-white hover:text-blue-500 transition-colors flex-shrink-0"
+              >
+                <Edit3 size={13} />
+              </button>
+            </>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Phone', value: booking.guestPhone || '—' },
             { label: 'Platform', value: booking.platform },
             { label: 'Guests', value: booking.numberOfGuests },
             { label: 'Days', value: booking.numberOfDays },
@@ -135,13 +212,50 @@ function GuestDetailModal({ booking, onClose, onRatingChange, msgTemplate }) {
         </div>
 
         <div className="rounded-xl p-3" style={{ background: 'var(--color-primary-light)' }}>
-          <div className="text-xs text-gray-500 font-medium">Amount</div>
-          <div className="text-xl font-extrabold" style={{ color: 'var(--color-primary)' }}>
-            {booking.amount ? `₹${booking.amount.toLocaleString('en-IN')}` : 'Not set'}
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs text-gray-500 font-medium">Amount</div>
+            {!editAmount && (
+              <button
+                onClick={() => { setEditAmount(true); setAmountInput(booking.amount ? String(booking.amount) : ''); }}
+                className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-white/60 transition-colors"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                <Edit3 size={12} />
+              </button>
+            )}
           </div>
-          <div className={`text-xs font-semibold mt-0.5 ${booking.earningsStatus === 'confirmed' ? 'text-green-600' : 'text-amber-600'}`}>
-            {booking.earningsStatus === 'confirmed' ? '✓ Confirmed' : '⚠ Pending'}
-          </div>
+          {editAmount ? (
+            <div className="space-y-2">
+              <input
+                type="number"
+                className="input text-sm py-1.5 bg-white"
+                placeholder="₹ Enter amount"
+                inputMode="numeric"
+                value={amountInput}
+                onChange={e => setAmountInput(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button onClick={handleSaveAmount} disabled={amountLoading}
+                  className="flex-1 py-1.5 rounded-xl text-xs font-bold text-white bg-green-500 hover:bg-green-600 transition-colors">
+                  {amountLoading ? 'Saving...' : '✓ Confirm Amount'}
+                </button>
+                <button onClick={() => setEditAmount(false)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="text-xl font-extrabold" style={{ color: 'var(--color-primary)' }}>
+                {booking.amount ? `₹${booking.amount.toLocaleString('en-IN')}` : 'Not set'}
+              </div>
+              <div className={`text-xs font-semibold mt-0.5 ${booking.earningsStatus === 'confirmed' ? 'text-green-600' : 'text-amber-600'}`}>
+                {booking.earningsStatus === 'confirmed' ? '✓ Confirmed' : '⚠ Pending — tap pencil to set'}
+              </div>
+            </>
+          )}
         </div>
 
         {booking.idProofs?.length > 0 && (
@@ -166,54 +280,6 @@ function GuestDetailModal({ booking, onClose, onRatingChange, msgTemplate }) {
           </a>
         )}
       </div>
-    </Modal>
-  );
-}
-
-// ─── Add Phone Modal ─────────────────────────────────────────────────────────
-function AddPhoneModal({ booking, onClose, onSaved }) {
-  const [phone, setPhone] = useState(booking?.guestPhone || '');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!phone.trim()) { toast.error('Enter a phone number'); return; }
-    setLoading(true);
-    try {
-      await api.put(`/bookings/${booking._id}`, { guestPhone: phone.trim() });
-      toast.success('Phone saved ✓');
-      onSaved();
-      onClose();
-    } catch {
-      toast.error('Failed to save');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Modal isOpen title="Add Guest Phone" onClose={onClose} size="sm">
-      <div className="mb-4">
-        <div className="font-semibold text-gray-900">{booking?.guestName}</div>
-        <div className="text-sm text-gray-400">{booking?.platform} · {booking?.propertyId?.name}</div>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="input-group">
-          <label className="label flex items-center gap-1.5"><Phone size={13} /> Phone Number</label>
-          <input
-            type="tel"
-            className="input"
-            placeholder="e.g. +91 98765 43210"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            autoFocus
-          />
-          <p className="text-xs text-gray-400 mt-1">Saved for WhatsApp campaigns and guest follow-ups</p>
-        </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? 'Saving...' : 'Save Phone'}
-        </button>
-      </form>
     </Modal>
   );
 }
@@ -283,7 +349,6 @@ export default function Guests() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMsgModal, setShowMsgModal] = useState(false);
-  const [addPhoneFor, setAddPhoneFor] = useState(null);
   const [msgTemplate] = useState(DEFAULT_TEMPLATE);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [platformOpen, setPlatformOpen] = useState(false);
@@ -324,6 +389,25 @@ export default function Guests() {
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['bookings'] }),
   });
+
+  const handlePhoneChange = (id, phone) => {
+    queryClient.setQueryData(['bookings', platform], (old) => {
+      if (!old) return old;
+      return { ...old, bookings: old.bookings.map(b => b._id === id ? { ...b, guestPhone: phone } : b) };
+    });
+    if (selectedBooking?._id === id) setSelectedBooking(prev => prev ? { ...prev, guestPhone: phone } : prev);
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+  };
+
+  const handleAmountChange = (id, amount) => {
+    queryClient.setQueryData(['bookings', platform], (old) => {
+      if (!old) return old;
+      return { ...old, bookings: old.bookings.map(b => b._id === id ? { ...b, amount, earningsStatus: 'confirmed' } : b) };
+    });
+    if (selectedBooking?._id === id) setSelectedBooking(prev => prev ? { ...prev, amount, earningsStatus: 'confirmed' } : prev);
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['booking-stats'] });
+  };
 
   const handleExport = async () => {
     try {
@@ -450,8 +534,7 @@ export default function Guests() {
       ) : (
         <div className="space-y-2">
           {filtered.map(b => (
-            <div key={b._id} className="card cursor-pointer hover:shadow-card-md transition-shadow"
-              onClick={() => { setSelectedBooking(b); setConfirmDeleteId(null); }}>
+            <div key={b._id} className="card transition-shadow">
               {/* Row 1: avatar + name + amount */}
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 text-sm"
@@ -490,14 +573,14 @@ export default function Guests() {
                       <MessageCircle size={12} /> WhatsApp
                     </a>
                     <button
-                      onClick={() => setAddPhoneFor(b)}
+                      onClick={() => setSelectedBooking(b)}
                       className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-500 transition-colors">
                       <Edit3 size={12} />
                     </button>
                   </>
                 ) : (
                   <button
-                    onClick={() => setAddPhoneFor(b)}
+                    onClick={() => setSelectedBooking(b)}
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-400 text-xs font-semibold hover:bg-blue-50 hover:text-blue-500 transition-colors">
                     <PhoneCall size={12} /> Add Phone
                   </button>
@@ -542,7 +625,10 @@ export default function Guests() {
       )}
 
       <GuestDetailModal booking={selectedBooking} onClose={() => setSelectedBooking(null)}
-        onRatingChange={(id, r) => ratingMutation.mutate({ id, rating: r })} msgTemplate={msgTemplate} />
+        onRatingChange={(id, r) => ratingMutation.mutate({ id, rating: r })}
+        onAmountChange={handleAmountChange}
+        onPhoneChange={handlePhoneChange}
+        msgTemplate={msgTemplate} />
 
       {showMsgModal && (
         <MessageTemplateModal guests={goodGuests} onClose={() => setShowMsgModal(false)} />
@@ -553,13 +639,6 @@ export default function Guests() {
           onSaved={() => { queryClient.invalidateQueries({ queryKey: ['bookings'] }); queryClient.invalidateQueries({ queryKey: ['booking-stats'] }); }} />
       )}
 
-      {addPhoneFor && (
-        <AddPhoneModal
-          booking={addPhoneFor}
-          onClose={() => setAddPhoneFor(null)}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ['bookings'] })}
-        />
-      )}
     </div>
   );
 }

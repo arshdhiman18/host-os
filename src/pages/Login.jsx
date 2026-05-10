@@ -7,9 +7,9 @@ import OtpVerify from '../components/OtpVerify';
 import api from '../utils/api';
 
 // ─── Forgot Password ──────────────────────────────────────────────────────────
-function ForgotPassword({ onBack }) {
+function ForgotPassword({ onBack, initialEmail = '' }) {
   const [step, setStep] = useState('email'); // 'email' | 'reset'
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -198,7 +198,7 @@ export default function Login() {
     }
 
     if (showForgot) {
-      return <ForgotPassword onBack={() => setShowForgot(false)} />;
+      return <ForgotPassword onBack={() => setShowForgot(false)} initialEmail={form.email} />;
     }
 
     return (
