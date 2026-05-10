@@ -683,11 +683,11 @@ function PropertyCard({ property, onEdit, onShare, onDelete, onSync, onAddExpens
         )}
         <div className="flex-1" />
         <button onClick={() => onEdit(property)}
-          className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors">
+          className="flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
           <Edit3 size={13} />
         </button>
         <button onClick={() => onDelete(property._id)}
-          className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-red-50 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors">
+          className="flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-50 hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors">
           <Trash2 size={13} />
         </button>
       </div>

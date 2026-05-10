@@ -287,26 +287,38 @@ export default function Earnings() {
 
       {/* ── Business Overview ── */}
       <div className="card">
-        {/* Header row */}
-        <div className="flex items-center justify-between gap-2 mb-5">
+        {/* Mobile header: title + icon buttons on row 1, range on row 2 */}
+        <div className="md:hidden mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-900">Business Overview</h2>
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setShowImport(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white active:scale-95 transition-all">
+                <Upload size={15} className="text-gray-500" />
+              </button>
+              <button onClick={handleExport}
+                className="w-9 h-9 flex items-center justify-center rounded-xl text-white active:scale-95 transition-all"
+                style={{ background: 'var(--color-primary)' }}>
+                <Download size={15} />
+              </button>
+            </div>
+          </div>
+          <RangeDropdown value={range} onChange={setRange} />
+        </div>
+
+        {/* Desktop header: all on one row */}
+        <div className="hidden md:flex items-center justify-between gap-2 mb-5">
           <h2 className="text-lg font-bold text-gray-900">Business Overview</h2>
           <div className="flex items-center gap-2">
             <RangeDropdown value={range} onChange={setRange} />
-            {/* Import hidden on mobile — accessible via the icon-only button */}
             <button onClick={() => setShowImport(true)}
-              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 active:scale-95 transition-all">
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 active:scale-95 transition-all">
               <Upload size={14} /> Import
-            </button>
-            {/* Mobile: icon only */}
-            <button onClick={() => setShowImport(true)}
-              className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white active:scale-95 transition-all">
-              <Upload size={15} className="text-gray-500" />
             </button>
             <button onClick={handleExport}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-white active:scale-95 transition-all"
               style={{ background: 'var(--color-primary)' }}>
-              <Download size={14} />
-              <span className="hidden md:inline">Export</span>
+              <Download size={14} /> Export
             </button>
           </div>
         </div>
