@@ -743,7 +743,7 @@ export default function Properties() {
   // Show detail view if a property is selected
   if (detailPropertyId && detailProperty) {
     return (
-      <div className="max-w-2xl mx-auto animate-fade-in">
+      <div className="animate-fade-in">
         <PropertyDetail
           property={detailProperty}
           properties={properties}
@@ -767,7 +767,7 @@ export default function Properties() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -818,7 +818,7 @@ export default function Properties() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-3">
           {properties.map(p => (
             <PropertyCard
               key={p._id}
