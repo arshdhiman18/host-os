@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import {
   TrendingUp, TrendingDown, AlertTriangle, IndianRupee,
   Download, Upload, ArrowRight, ArrowLeft, Check, Trash2,
-  Plus, ChevronDown,
+  Plus, ChevronDown, SlidersHorizontal,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
@@ -34,21 +34,24 @@ function getDateRange(range) {
   return { start: '', end: '' };
 }
 
+// Desktop: compact dropdown next to Import/Export
 function RangeDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
       <button onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-        {RANGE_LABELS[value]} <ChevronDown size={14} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <SlidersHorizontal size={14} className="text-gray-500" />
+        {RANGE_LABELS[value]}
+        <ChevronDown size={13} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-gray-100 rounded-2xl shadow-card-md z-20 overflow-hidden">
+          <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-gray-100 rounded-2xl shadow-card-md z-20 overflow-hidden">
             {Object.entries(RANGE_LABELS).map(([k, label]) => (
               <button key={k} onClick={() => { onChange(k); setOpen(false); }}
-                className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-between"
+                className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-between"
                 style={{ color: value === k ? 'var(--color-primary)' : '#374151' }}>
                 {label}
                 {value === k && <Check size={13} style={{ color: 'var(--color-primary)' }} />}
@@ -57,6 +60,46 @@ function RangeDropdown({ value, onChange }) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Mobile: full overlay modal for range selection
+function RangeModal({ value, onChange, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+      <div className="w-full" onClick={e => e.stopPropagation()}>
+        {/* Faded backdrop */}
+        <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+        {/* Bottom sheet */}
+        <div className="relative bg-white rounded-t-3xl shadow-card-lg pb-8">
+          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+            <span className="text-base font-bold text-gray-900">Filter by Period</span>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+              <ChevronDown size={16} />
+            </button>
+          </div>
+          <div className="px-4 pt-2">
+            {Object.entries(RANGE_LABELS).map(([k, label]) => (
+              <button key={k} onClick={() => { onChange(k); onClose(); }}
+                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-colors"
+                style={value === k ? { background: 'var(--color-primary-light)' } : {}}>
+                <span className="text-base font-semibold"
+                  style={{ color: value === k ? 'var(--color-primary)' : '#374151' }}>
+                  {label}
+                </span>
+                {value === k && (
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--color-primary)' }}>
+                    <Check size={13} className="text-white" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -281,32 +324,36 @@ export default function Earnings() {
   } = profitData || {};
 
   const isProfitable = netProfit >= 0;
+  const [showRangeModal, setShowRangeModal] = useState(false);
 
   return (
     <div className="space-y-5 animate-fade-in">
 
       {/* ── Business Overview ── */}
       <div className="card">
-        {/* Mobile header: title + icon buttons on row 1, range on row 2 */}
-        <div className="md:hidden mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-900">Business Overview</h2>
-            <div className="flex items-center gap-1.5">
-              <button onClick={() => setShowImport(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white active:scale-95 transition-all">
-                <Upload size={15} className="text-gray-500" />
-              </button>
-              <button onClick={handleExport}
-                className="w-9 h-9 flex items-center justify-center rounded-xl text-white active:scale-95 transition-all"
-                style={{ background: 'var(--color-primary)' }}>
-                <Download size={15} />
-              </button>
-            </div>
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-900">Business Overview</h2>
+          <div className="flex items-center gap-1.5">
+            {/* Filter icon opens the range modal */}
+            <button onClick={() => setShowRangeModal(true)}
+              className="flex items-center gap-1 px-2.5 py-2 rounded-xl border border-gray-200 bg-white active:scale-95 transition-all">
+              <SlidersHorizontal size={14} className="text-gray-500" />
+              <span className="text-xs font-semibold text-gray-600">{RANGE_LABELS[range].split(' ').slice(-1)[0] === 'time' ? 'All' : RANGE_LABELS[range].split(' ')[1]}</span>
+            </button>
+            <button onClick={() => setShowImport(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white active:scale-95 transition-all">
+              <Upload size={14} className="text-gray-500" />
+            </button>
+            <button onClick={handleExport}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-white active:scale-95 transition-all"
+              style={{ background: 'var(--color-primary)' }}>
+              <Download size={14} />
+            </button>
           </div>
-          <RangeDropdown value={range} onChange={setRange} />
         </div>
 
-        {/* Desktop header: all on one row */}
+        {/* Desktop header */}
         <div className="hidden md:flex items-center justify-between gap-2 mb-5">
           <h2 className="text-lg font-bold text-gray-900">Business Overview</h2>
           <div className="flex items-center gap-2">
@@ -617,6 +664,7 @@ export default function Earnings() {
       )}
 
       {showImport && <ImportModal onClose={() => setShowImport(false)} properties={properties} onImported={invalidateAll} />}
+      {showRangeModal && <RangeModal value={range} onChange={setRange} onClose={() => setShowRangeModal(false)} />}
       {showAddOverall && (
         <ExpenseModal defaultType="overall" properties={properties}
           onClose={() => setShowAddOverall(false)}

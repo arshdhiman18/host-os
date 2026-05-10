@@ -382,7 +382,7 @@ function IcalSyncModal({ property, onClose }) {
 }
 
 // ─── Property Detail View ─────────────────────────────────────────────────────
-function PropertyDetail({ property, properties, onBack, onEdit, onSync, onShare, onTodosUpdate }) {
+function PropertyDetail({ property, properties, onBack, onEdit, onSync, onShare, onTodosUpdate, onDelete }) {
   const queryClient = useQueryClient();
   const [newTodo, setNewTodo] = useState('');
   const [addingTodo, setAddingTodo] = useState(false);
@@ -608,6 +608,21 @@ function PropertyDetail({ property, properties, onBack, onEdit, onSync, onShare,
         )}
       </div>
 
+      {/* Delete Property — at bottom so it's not accidentally tapped */}
+      <div className="card">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Danger Zone</div>
+        <button
+          onClick={() => {
+            if (window.confirm(`Delete "${property.name}"? All bookings will remain but the property will be removed.`)) {
+              onDelete(property._id);
+            }
+          }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors active:scale-95"
+        >
+          <Trash2 size={14} /> Delete Property
+        </button>
+      </div>
+
       {showExpenseModal && (
         <ExpenseModal
           defaultType="property"
@@ -625,7 +640,7 @@ function PropertyDetail({ property, properties, onBack, onEdit, onSync, onShare,
 }
 
 // ─── Property Card ────────────────────────────────────────────────────────────
-function PropertyCard({ property, onEdit, onShare, onDelete, onSync, onAddExpense, onViewDetail }) {
+function PropertyCard({ property, onShare, onSync, onAddExpense, onViewDetail }) {
   const hasIcal = property.airbnbIcalUrls?.some(u => u.trim()) || property.bookingIcalUrls?.some(u => u.trim());
   const pendingTodos = (property.todos || []).filter(t => !t.done);
 
@@ -679,15 +694,6 @@ function PropertyCard({ property, onEdit, onShare, onDelete, onSync, onAddExpens
             <RefreshCw size={11} /> Sync
           </button>
         )}
-        <div className="flex-1" />
-        <button onClick={() => onEdit(property)}
-          className="whitespace-nowrap flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors">
-          <Edit3 size={12} />
-        </button>
-        <button onClick={() => onDelete(property._id)}
-          className="whitespace-nowrap flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-red-50 text-gray-400 hover:text-red-400 transition-colors">
-          <Trash2 size={12} />
-        </button>
       </div>
     </div>
   );
@@ -750,6 +756,7 @@ export default function Properties() {
           onSync={setSyncProperty}
           onShare={setShareProperty}
           onTodosUpdate={handleTodosUpdate}
+          onDelete={(id) => { handleDelete(id); setDetailPropertyId(null); }}
         />
         {showForm && (
           <PropertyForm
@@ -821,9 +828,7 @@ export default function Properties() {
             <PropertyCard
               key={p._id}
               property={p}
-              onEdit={(p) => { setEditProperty(p); setShowForm(true); }}
               onShare={setShareProperty}
-              onDelete={handleDelete}
               onSync={setSyncProperty}
               onAddExpense={setExpenseProperty}
               onViewDetail={() => setDetailPropertyId(p._id)}
