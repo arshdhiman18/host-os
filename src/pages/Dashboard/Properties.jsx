@@ -663,32 +663,30 @@ function PropertyCard({ property, onEdit, onShare, onDelete, onSync, onAddExpens
       </div>
 
       {/* Actions row */}
-      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50"
+      <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-50"
         onClick={e => e.stopPropagation()}>
         <button onClick={() => onShare(property)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-          style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
+          className="whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
           <Copy size={11} /> Copy Link
         </button>
         <button onClick={() => onAddExpense(property)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors">
+          className="whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors">
           <IndianRupee size={11} /> Add Expense
         </button>
         {hasIcal && (
           <button onClick={() => onSync(property)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-            style={{ background: '#FFF7ED', color: '#F97316' }}>
+            className="whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
             <RefreshCw size={11} /> Sync
           </button>
         )}
         <div className="flex-1" />
         <button onClick={() => onEdit(property)}
-          className="flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-          <Edit3 size={13} />
+          className="whitespace-nowrap flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors">
+          <Edit3 size={12} />
         </button>
         <button onClick={() => onDelete(property._id)}
-          className="flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-50 hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors">
-          <Trash2 size={13} />
+          className="whitespace-nowrap flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-red-50 text-gray-400 hover:text-red-400 transition-colors">
+          <Trash2 size={12} />
         </button>
       </div>
     </div>
