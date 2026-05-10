@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import {
   Search, Download, Plus, Trash2, Phone,
-  Users, FileText, ThumbsUp, ThumbsDown, MessageCircle, Edit3
+  Users, FileText, ThumbsUp, ThumbsDown, MessageCircle, Edit3, PhonePlus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -170,6 +170,54 @@ function GuestDetailModal({ booking, onClose, onRatingChange, msgTemplate }) {
   );
 }
 
+// ─── Add Phone Modal ─────────────────────────────────────────────────────────
+function AddPhoneModal({ booking, onClose, onSaved }) {
+  const [phone, setPhone] = useState(booking?.guestPhone || '');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!phone.trim()) { toast.error('Enter a phone number'); return; }
+    setLoading(true);
+    try {
+      await api.put(`/bookings/${booking._id}`, { guestPhone: phone.trim() });
+      toast.success('Phone saved ✓');
+      onSaved();
+      onClose();
+    } catch {
+      toast.error('Failed to save');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen title="Add Guest Phone" onClose={onClose} size="sm">
+      <div className="mb-4">
+        <div className="font-semibold text-gray-900">{booking?.guestName}</div>
+        <div className="text-sm text-gray-400">{booking?.platform} · {booking?.propertyId?.name}</div>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="input-group">
+          <label className="label flex items-center gap-1.5"><Phone size={13} /> Phone Number</label>
+          <input
+            type="tel"
+            className="input"
+            placeholder="e.g. +91 98765 43210"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            autoFocus
+          />
+          <p className="text-xs text-gray-400 mt-1">Saved for WhatsApp campaigns and guest follow-ups</p>
+        </div>
+        <button type="submit" disabled={loading} className="btn-primary w-full">
+          {loading ? 'Saving...' : 'Save Phone'}
+        </button>
+      </form>
+    </Modal>
+  );
+}
+
 // ─── Add Booking Modal ────────────────────────────────────────────────────────
 function AddBookingModal({ properties, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -235,6 +283,7 @@ export default function Guests() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMsgModal, setShowMsgModal] = useState(false);
+  const [addPhoneFor, setAddPhoneFor] = useState(null);
   const [msgTemplate] = useState(DEFAULT_TEMPLATE);
 
   const { data: bookingsData, isLoading } = useQuery({
@@ -397,13 +446,19 @@ export default function Guests() {
               {/* Row 2: actions */}
               <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-50"
                 onClick={e => e.stopPropagation()}>
-                {/* WhatsApp */}
-                {toWAPhone(b.guestPhone) && (
+                {/* WhatsApp or Add Phone */}
+                {toWAPhone(b.guestPhone) ? (
                   <a href={buildWALink(b.guestPhone, b.guestName, b.propertyId?.name, msgTemplate)}
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-semibold hover:bg-green-500 hover:text-white transition-colors">
                     <MessageCircle size={12} /> WhatsApp
                   </a>
+                ) : (
+                  <button
+                    onClick={() => setAddPhoneFor(b)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-400 text-xs font-semibold hover:bg-blue-50 hover:text-blue-500 transition-colors">
+                    <PhonePlus size={12} /> Add Phone
+                  </button>
                 )}
                 <div className="flex-1" />
                 {/* Rating */}
@@ -435,6 +490,14 @@ export default function Guests() {
       {showAddModal && propertiesData?.properties && (
         <AddBookingModal properties={propertiesData.properties} onClose={() => setShowAddModal(false)}
           onSaved={() => { queryClient.invalidateQueries({ queryKey: ['bookings'] }); queryClient.invalidateQueries({ queryKey: ['booking-stats'] }); }} />
+      )}
+
+      {addPhoneFor && (
+        <AddPhoneModal
+          booking={addPhoneFor}
+          onClose={() => setAddPhoneFor(null)}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['bookings'] })}
+        />
       )}
     </div>
   );

@@ -10,8 +10,9 @@ import Earnings from './Earnings';
 import Properties from './Properties';
 import Verification from './Verification';
 import Billing from './Billing';
+import Calendar from './Calendar';
 
-const TABS = ['overview', 'guests', 'earnings', 'properties', 'billing'];
+const TABS = ['overview', 'guests', 'earnings', 'properties', 'calendar', 'billing'];
 
 export default function Dashboard() {
   const { tab } = useParams();
@@ -69,6 +70,7 @@ export default function Dashboard() {
             {activeTab === 'guests' && <Guests />}
             {activeTab === 'earnings' && <Earnings />}
             {activeTab === 'properties' && <Properties />}
+            {activeTab === 'calendar' && <Calendar />}
             {activeTab === 'billing' && <Billing onUpgradeClick={() => setShowUpgrade(true)} />}
           </div>
         )}

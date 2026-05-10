@@ -4,7 +4,8 @@ import api from '../../utils/api';
 import {
   Plus, Home, MapPin, Wifi, Copy, Share2, Trash2,
   Edit3, Link2, ChevronRight, Check, X, ExternalLink,
-  ClipboardList, CheckSquare, Square, Users2, ChevronDown, ChevronUp
+  ClipboardList, CheckSquare, Square, Users2, ChevronDown, ChevronUp,
+  RefreshCw, CalendarDays,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
@@ -21,7 +22,27 @@ function PropertyForm({ property, onClose, onSaved }) {
     wifiPassword: property?.wifiPassword || '',
     instructions: property?.instructions || '',
     mapUrl: property?.mapUrl || '',
+    airbnbIcalUrls: property?.airbnbIcalUrls?.length ? property.airbnbIcalUrls : [''],
+    bookingIcalUrls: property?.bookingIcalUrls?.length ? property.bookingIcalUrls : [''],
   });
+
+  const updateIcalUrl = (platform, index, value) => {
+    const key = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
+    const updated = [...form[key]];
+    updated[index] = value;
+    setForm({ ...form, [key]: updated });
+  };
+
+  const addIcalUrl = (platform) => {
+    const key = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
+    setForm({ ...form, [key]: [...form[key], ''] });
+  };
+
+  const removeIcalUrl = (platform, index) => {
+    const key = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
+    const updated = form[key].filter((_, i) => i !== index);
+    setForm({ ...form, [key]: updated.length ? updated : [''] });
+  };
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -70,6 +91,65 @@ function PropertyForm({ property, onClose, onSaved }) {
         {field('wifiPassword', 'WiFi Password', 'text', '••••••••')}
         {field('instructions', 'Check-in Instructions', 'textarea', 'Key is under the mat...')}
         {field('mapUrl', 'Google Maps URL', 'url', 'https://maps.google.com/...')}
+        <div className="divider" />
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">iCal Sync (optional)</div>
+        <div className="text-xs text-gray-400 -mt-1">
+          Add one URL per Airbnb/Booking.com listing. Multiple listings can map to this one property.
+        </div>
+
+        {/* Airbnb iCal URLs */}
+        <div className="space-y-2">
+          <label className="label" style={{ color: '#FF5A5F' }}>Airbnb iCal URLs</label>
+          {form.airbnbIcalUrls.map((url, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input
+                type="url"
+                className="input flex-1 text-xs"
+                placeholder="https://www.airbnb.com/calendar/ical/..."
+                value={url}
+                onChange={e => updateIcalUrl('Airbnb', i, e.target.value)}
+              />
+              {form.airbnbIcalUrls.length > 1 && (
+                <button type="button" onClick={() => removeIcalUrl('Airbnb', i)}
+                  className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 flex-shrink-0">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+          <button type="button" onClick={() => addIcalUrl('Airbnb')}
+            className="text-xs font-semibold flex items-center gap-1"
+            style={{ color: '#FF5A5F' }}>
+            <Plus size={12} /> Add another Airbnb URL
+          </button>
+        </div>
+
+        {/* Booking.com iCal URLs */}
+        <div className="space-y-2">
+          <label className="label" style={{ color: '#0071C2' }}>Booking.com iCal URLs</label>
+          {form.bookingIcalUrls.map((url, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input
+                type="url"
+                className="input flex-1 text-xs"
+                placeholder="https://admin.booking.com/hotel/ical/..."
+                value={url}
+                onChange={e => updateIcalUrl('Booking.com', i, e.target.value)}
+              />
+              {form.bookingIcalUrls.length > 1 && (
+                <button type="button" onClick={() => removeIcalUrl('Booking.com', i)}
+                  className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 flex-shrink-0">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+          <button type="button" onClick={() => addIcalUrl('Booking.com')}
+            className="text-xs font-semibold flex items-center gap-1"
+            style={{ color: '#0071C2' }}>
+            <Plus size={12} /> Add another Booking.com URL
+          </button>
+        </div>
         <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
           {loading ? 'Saving...' : property ? 'Save Changes' : 'Add Property'}
         </button>
@@ -236,12 +316,131 @@ function CoHostModal({ onClose, existingRequest }) {
   );
 }
 
+// ─── iCal Sync Modal ──────────────────────────────────────────────────────────
+function IcalSyncModal({ property, onClose }) {
+  const queryClient = useQueryClient();
+  const [syncing, setSyncing] = useState({ Airbnb: false, 'Booking.com': false });
+  const [results, setResults] = useState({});
+
+  const syncPlatform = async (platform) => {
+    const urlsField = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
+    const urls = (property[urlsField] || []).filter(u => u.trim());
+    if (!urls.length) return toast.error(`No ${platform} iCal URLs saved. Edit the property to add them.`);
+
+    setSyncing(s => ({ ...s, [platform]: true }));
+    try {
+      const { data } = await api.post(`/import/ical/${property._id}`, { platform, urls });
+      setResults(r => ({ ...r, [platform]: data }));
+      if (data.created > 0) {
+        queryClient.invalidateQueries({ queryKey: ['calendar-bookings'] });
+        queryClient.invalidateQueries({ queryKey: ['bookings'] });
+        queryClient.invalidateQueries({ queryKey: ['booking-stats'] });
+        toast.success(`${data.created} new booking${data.created !== 1 ? 's' : ''} synced from ${platform}`);
+      } else {
+        toast.success(`${platform} is up to date — no new bookings`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || `${platform} sync failed`);
+    } finally {
+      setSyncing(s => ({ ...s, [platform]: false }));
+    }
+  };
+
+  const PLATFORM_COLORS = { Airbnb: '#FF5A5F', 'Booking.com': '#0071C2' };
+
+  return (
+    <Modal isOpen title="Sync iCal Bookings" onClose={onClose} size="sm">
+      <div className="space-y-4">
+        <div className="rounded-xl p-3" style={{ background: 'var(--color-primary-light)' }}>
+          <div className="text-xs text-gray-500 font-medium">Property</div>
+          <div className="font-bold text-gray-900">{property.name}</div>
+        </div>
+
+        <div className="text-xs text-gray-500 leading-relaxed">
+          Syncs all date blocks from every iCal URL to your calendar. All bookings land on this property.
+          For guest names and amounts, use CSV import.
+        </div>
+
+        {['Airbnb', 'Booking.com'].map(platform => {
+          const urlsField = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
+          const urls = (property[urlsField] || []).filter(u => u.trim());
+          const result = results[platform];
+          const isSyncing = syncing[platform];
+
+          return (
+            <div key={platform} className="rounded-xl border border-gray-100 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold" style={{ color: PLATFORM_COLORS[platform] }}>
+                  {platform}
+                  {urls.length > 0 && (
+                    <span className="ml-1.5 text-xs font-normal text-gray-400">
+                      {urls.length} URL{urls.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </span>
+                <button
+                  onClick={() => syncPlatform(platform)}
+                  disabled={isSyncing || !urls.length}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40 active:scale-95"
+                  style={{ background: urls.length ? PLATFORM_COLORS[platform] : '#D1D5DB' }}
+                >
+                  <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
+                  {isSyncing ? 'Syncing...' : 'Sync All'}
+                </button>
+              </div>
+
+              {urls.length > 0 ? (
+                <div className="space-y-1">
+                  {urls.map((url, i) => (
+                    <div key={i} className="text-xs text-gray-400 truncate bg-gray-50 rounded-lg px-2 py-1">
+                      {url}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-amber-600 font-medium">
+                  No URLs added — edit property to add iCal URLs
+                </div>
+              )}
+
+              {result && (
+                <div className="flex gap-3 text-xs pt-1 border-t border-gray-50">
+                  <span className="text-green-600 font-semibold">{result.created} new</span>
+                  <span className="text-gray-400">{result.skipped} skipped</span>
+                  <span className="text-gray-400">{result.totalEvents} total events</span>
+                  {result.failedUrls?.length > 0 && (
+                    <span className="text-red-400">{result.failedUrls.length} URL{result.failedUrls.length !== 1 ? 's' : ''} failed</span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <div className="rounded-xl p-3 space-y-1" style={{ background: '#FFF7ED' }}>
+          <div className="text-xs font-semibold text-orange-600">Test URLs (localhost only)</div>
+          {[
+            'beach-house-entire', 'beach-house-room', 'beach-house-studio',
+            'mountain-villa', 'city-apartment',
+          ].map(name => (
+            <div key={name} className="text-xs text-orange-500 font-mono truncate">
+              http://localhost:5000/ical/{name}.ics
+            </div>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ─── Property Card ────────────────────────────────────────────────────────────
-function PropertyCard({ property, onEdit, onShare, onDelete, onTodosUpdate }) {
+function PropertyCard({ property, onEdit, onShare, onDelete, onTodosUpdate, onSync }) {
   const queryClient = useQueryClient();
   const [showTodos, setShowTodos] = useState(false);
   const [newTodo, setNewTodo] = useState('');
   const [addingTodo, setAddingTodo] = useState(false);
+  const hasIcal = property.airbnbIcalUrls?.some(u => u.trim()) ||
+                  property.bookingIcalUrls?.some(u => u.trim());
 
   const pendingTodos = (property.todos || []).filter(t => !t.done);
 
@@ -383,6 +582,21 @@ function PropertyCard({ property, onEdit, onShare, onDelete, onTodosUpdate }) {
         )}
       </div>
 
+      {/* iCal Sync button — shown if any iCal URL is saved */}
+      {hasIcal && (
+        <button
+          onClick={() => onSync(property)}
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 mb-2"
+          style={{ background: '#FFF7ED', color: '#F97316' }}
+        >
+          <span className="flex items-center gap-2">
+            <CalendarDays size={15} />
+            Sync iCal Bookings
+          </span>
+          <RefreshCw size={14} />
+        </button>
+      )}
+
       {/* Share link CTA */}
       <button
         onClick={() => onShare(property)}
@@ -406,6 +620,7 @@ export default function Properties() {
   const [showForm, setShowForm] = useState(false);
   const [editProperty, setEditProperty] = useState(null);
   const [shareProperty, setShareProperty] = useState(null);
+  const [syncProperty, setSyncProperty] = useState(null);
   const [showCoHostModal, setShowCoHostModal] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -519,6 +734,7 @@ export default function Properties() {
               onShare={setShareProperty}
               onDelete={handleDelete}
               onTodosUpdate={handleTodosUpdate}
+              onSync={setSyncProperty}
             />
           ))}
         </div>
@@ -536,6 +752,13 @@ export default function Properties() {
         <ShareLinkModal
           property={shareProperty}
           onClose={() => setShareProperty(null)}
+        />
+      )}
+
+      {syncProperty && (
+        <IcalSyncModal
+          property={syncProperty}
+          onClose={() => setSyncProperty(null)}
         />
       )}
 
