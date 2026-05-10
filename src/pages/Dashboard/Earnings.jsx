@@ -287,23 +287,59 @@ export default function Earnings() {
 
       {/* ── Business Overview ── */}
       <div className="card">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-2 mb-5">
           <h2 className="text-lg font-bold text-gray-900">Business Overview</h2>
           <div className="flex items-center gap-2">
             <RangeDropdown value={range} onChange={setRange} />
+            {/* Import hidden on mobile — accessible via the icon-only button */}
             <button onClick={() => setShowImport(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 active:scale-95 transition-all">
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 active:scale-95 transition-all">
               <Upload size={14} /> Import
+            </button>
+            {/* Mobile: icon only */}
+            <button onClick={() => setShowImport(true)}
+              className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white active:scale-95 transition-all">
+              <Upload size={15} className="text-gray-500" />
             </button>
             <button onClick={handleExport}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-white active:scale-95 transition-all"
               style={{ background: 'var(--color-primary)' }}>
-              <Download size={14} /> Export
+              <Download size={14} />
+              <span className="hidden md:inline">Export</span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        {/* Mobile: Net Profit hero + Revenue/Expenses row */}
+        <div className="md:hidden">
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Net Profit</div>
+            <div className="text-4xl font-extrabold tracking-tight" style={{ color: isProfitable ? '#10B981' : '#EF4444' }}>
+              ₹{Math.abs(netProfit).toLocaleString('en-IN')}
+            </div>
+            {!isProfitable && netProfit !== 0 && (
+              <div className="text-xs text-red-400 font-medium mt-1">Running at a loss</div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+            <div>
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Revenue</div>
+              <div className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-primary)' }}>
+                ₹{totalRevenue.toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Expenses</div>
+              <div className="text-xl font-extrabold tracking-tight" style={{ color: totalExpenses > 0 ? '#EF4444' : '#374151' }}>
+                ₹{totalExpenses.toLocaleString('en-IN')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop: 3-column layout */}
+        <div className="hidden md:grid grid-cols-3 gap-4">
           {[
             { label: 'TOTAL REVENUE',  value: totalRevenue,  color: 'var(--color-primary)' },
             { label: 'TOTAL EXPENSES', value: totalExpenses, color: totalExpenses > 0 ? '#EF4444' : '#374151' },
@@ -311,7 +347,7 @@ export default function Earnings() {
           ].map(({ label, value, color }, i) => (
             <div key={label} className={`py-2 ${i > 0 ? 'pl-4 border-l border-gray-100' : ''}`}>
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</div>
-              <div className="text-2xl md:text-3xl font-extrabold tracking-tight" style={{ color }}>
+              <div className="text-3xl font-extrabold tracking-tight" style={{ color }}>
                 ₹{Math.abs(value).toLocaleString('en-IN')}
               </div>
               {label === 'NET PROFIT' && !isProfitable && value !== 0 && (
