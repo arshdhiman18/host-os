@@ -80,7 +80,7 @@ export default function Layout({ activeTab, onTabChange, children }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-4 md:px-6 py-5 pb-nav md:pb-6">
+        <main className="flex-1 px-4 md:px-6 pt-5 pb-nav md:pb-6">
           {children}
         </main>
       </div>

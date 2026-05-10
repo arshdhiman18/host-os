@@ -72,7 +72,7 @@ function RangeModal({ value, onChange, onClose }) {
         {/* Faded backdrop */}
         <div className="fixed inset-0 bg-black/40" onClick={onClose} />
         {/* Bottom sheet */}
-        <div className="relative bg-white rounded-t-3xl shadow-card-lg pb-8">
+        <div className="relative bg-white rounded-t-3xl shadow-card-lg" style={{ paddingBottom: 'calc(var(--bottom-nav-height) + 0.5rem + env(safe-area-inset-bottom, 0px))' }}>
           <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
             <span className="text-base font-bold text-gray-900">Filter by Period</span>
             <button onClick={onClose}
