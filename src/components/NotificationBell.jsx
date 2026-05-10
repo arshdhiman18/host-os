@@ -112,7 +112,7 @@ export default function NotificationBell({ onNavigate }) {
 
           {/* Slide-in drawer */}
           <div
-            className="fixed top-0 right-0 h-full w-full max-w-sm bg-white z-50 flex flex-col shadow-2xl"
+            className="fixed top-0 right-0 h-full w-full md:max-w-sm bg-white z-50 flex flex-col shadow-2xl"
             style={{ animation: 'notifSlideIn 0.22s cubic-bezier(0.25,0.46,0.45,0.94)' }}
           >
             {/* Header */}
