@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import UpgradeModal from '../../components/UpgradeModal';
@@ -9,14 +9,22 @@ import Guests from './Guests';
 import Earnings from './Earnings';
 import Properties from './Properties';
 import Verification from './Verification';
+import Billing from './Billing';
 
-const TABS = ['overview', 'guests', 'earnings', 'properties'];
+const TABS = ['overview', 'guests', 'earnings', 'properties', 'billing'];
 
 export default function Dashboard() {
   const { tab } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showUpgrade, setShowUpgrade] = useState(false);
+
+  // Auto-open subscribe modal for any non-subscribed, non-admin user
+  useEffect(() => {
+    if (user && user.role !== 'admin' && user.subscriptionStatus !== 'active') {
+      setShowUpgrade(true);
+    }
+  }, [user?.subscriptionStatus, user?.role]);
 
   const activeTab = TABS.includes(tab) ? tab : 'overview';
 
@@ -61,6 +69,7 @@ export default function Dashboard() {
             {activeTab === 'guests' && <Guests />}
             {activeTab === 'earnings' && <Earnings />}
             {activeTab === 'properties' && <Properties />}
+            {activeTab === 'billing' && <Billing onUpgradeClick={() => setShowUpgrade(true)} />}
           </div>
         )}
 
@@ -81,7 +90,12 @@ export default function Dashboard() {
         )}
       </Layout>
 
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      <UpgradeModal
+        isOpen={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        canClose={user?.subscriptionStatus !== 'expired'}
+        subscriptionStatus={user?.subscriptionStatus}
+      />
     </>
   );
 }

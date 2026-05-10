@@ -8,16 +8,16 @@ const plans = [
   {
     id: 'monthly',
     label: 'Monthly',
-    price: '₹500',
+    price: '₹999',
     period: '/month',
     badge: null,
   },
   {
     id: 'yearly',
     label: 'Yearly',
-    price: '₹3,000',
+    price: '₹8,000',
     period: '/year',
-    badge: '50% off',
+    badge: null,
   },
 ];
 
@@ -30,8 +30,8 @@ const features = [
   'Unique guest links per property',
 ];
 
-export default function UpgradeModal({ isOpen, onClose }) {
-  const [selectedPlan, setSelectedPlan] = useState('yearly');
+export default function UpgradeModal({ isOpen, onClose, canClose = true, subscriptionStatus }) {
+  const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
   const { refreshUser } = useAuth();
 
@@ -79,9 +79,17 @@ export default function UpgradeModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  const subtitle =
+    subscriptionStatus === 'expired'
+      ? 'Your free trial has ended. Subscribe to continue managing your properties.'
+      : 'Subscribe now to unlock all HostOS features for your properties.';
+
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center animate-fade-in">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={canClose ? onClose : undefined}
+      />
 
       <div className="relative w-full max-w-md bg-white rounded-t-3xl md:rounded-2xl shadow-2xl animate-fade-in-up">
         {/* Handle */}
@@ -89,13 +97,15 @@ export default function UpgradeModal({ isOpen, onClose }) {
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
-        >
-          <X size={16} className="text-gray-500" />
-        </button>
+        {/* Close — hidden when user has no access */}
+        {canClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+          >
+            <X size={16} className="text-gray-500" />
+          </button>
+        )}
 
         <div className="px-6 pt-6 pb-8">
           {/* Header */}
@@ -105,7 +115,7 @@ export default function UpgradeModal({ isOpen, onClose }) {
               <Zap size={28} style={{ color: 'var(--color-primary)' }} />
             </div>
             <h2 className="text-xl font-bold text-gray-900">Upgrade to HostOS Pro</h2>
-            <p className="text-sm text-gray-500 mt-1">Your free trial has ended. Continue managing your properties.</p>
+            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
           </div>
 
           {/* Plan selector */}
@@ -120,11 +130,6 @@ export default function UpgradeModal({ isOpen, onClose }) {
                   : { borderColor: '#E5E7EB' }
                 }
               >
-                {plan.badge && (
-                  <span className="absolute -top-2.5 right-3 badge-warning text-xs px-2 py-0.5 rounded-full">
-                    {plan.badge}
-                  </span>
-                )}
                 <div className="font-bold text-gray-900 text-sm">{plan.label}</div>
                 <div className="text-xl font-bold mt-1" style={{ color: 'var(--color-primary)' }}>
                   {plan.price}

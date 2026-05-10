@@ -1,12 +1,13 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, IndianRupee, Home } from 'lucide-react';
+import { LayoutDashboard, Users, IndianRupee, Home, CreditCard } from 'lucide-react';
 
 const tabs = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'guests', label: 'Guests', icon: Users },
   { id: 'earnings', label: 'Earnings', icon: IndianRupee },
   { id: 'properties', label: 'Properties', icon: Home },
+  { id: 'billing', label: 'Billing', icon: CreditCard },
 ];
 
 export default function BottomNav({ activeTab, onTabChange }) {

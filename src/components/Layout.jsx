@@ -54,7 +54,8 @@ export default function Layout({ activeTab, onTabChange, children }) {
             <h1 className="font-bold text-gray-900 capitalize text-lg">
               {activeTab === 'overview' ? 'Dashboard' :
                activeTab === 'guests' ? 'Guests' :
-               activeTab === 'earnings' ? 'Earnings' : 'Properties'}
+               activeTab === 'earnings' ? 'Earnings' :
+               activeTab === 'billing' ? 'Billing' : 'Properties'}
             </h1>
           </div>
           <div className="flex items-center gap-3">

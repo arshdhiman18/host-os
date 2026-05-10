@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, IndianRupee, Home, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, IndianRupee, Home, LogOut, CreditCard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,7 @@ const tabs = [
   { id: 'guests', label: 'Guests', icon: Users },
   { id: 'earnings', label: 'Earnings', icon: IndianRupee },
   { id: 'properties', label: 'Properties', icon: Home },
+  { id: 'billing', label: 'Billing', icon: CreditCard },
 ];
 
 export default function Sidebar({ activeTab, onTabChange }) {
