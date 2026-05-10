@@ -5,12 +5,14 @@ import {
   Plus, Home, MapPin, Wifi, Copy, Share2, Trash2,
   Edit3, Link2, ChevronRight, Check, X, ExternalLink,
   ClipboardList, CheckSquare, Square, Users2, ChevronDown, ChevronUp,
-  RefreshCw, CalendarDays,
+  RefreshCw, CalendarDays, ArrowLeft, IndianRupee, Wrench,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
+import ExpenseModal, { CATEGORY_META } from '../../components/ExpenseModal';
 import { PropertyCardSkeleton } from '../../components/SkeletonLoader';
 import { useAuth } from '../../context/AuthContext';
+import { format } from 'date-fns';
 
 // ─── Property Form ────────────────────────────────────────────────────────────
 function PropertyForm({ property, onClose, onSaved }) {
@@ -43,6 +45,7 @@ function PropertyForm({ property, onClose, onSaved }) {
     const updated = form[key].filter((_, i) => i !== index);
     setForm({ ...form, [key]: updated.length ? updated : [''] });
   };
+
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -96,19 +99,13 @@ function PropertyForm({ property, onClose, onSaved }) {
         <div className="text-xs text-gray-400 -mt-1">
           Add one URL per Airbnb/Booking.com listing. Multiple listings can map to this one property.
         </div>
-
-        {/* Airbnb iCal URLs */}
         <div className="space-y-2">
           <label className="label" style={{ color: '#FF5A5F' }}>Airbnb iCal URLs</label>
           {form.airbnbIcalUrls.map((url, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input
-                type="url"
-                className="input flex-1 text-xs"
+              <input type="url" className="input flex-1 text-xs"
                 placeholder="https://www.airbnb.com/calendar/ical/..."
-                value={url}
-                onChange={e => updateIcalUrl('Airbnb', i, e.target.value)}
-              />
+                value={url} onChange={e => updateIcalUrl('Airbnb', i, e.target.value)} />
               {form.airbnbIcalUrls.length > 1 && (
                 <button type="button" onClick={() => removeIcalUrl('Airbnb', i)}
                   className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 flex-shrink-0">
@@ -118,24 +115,17 @@ function PropertyForm({ property, onClose, onSaved }) {
             </div>
           ))}
           <button type="button" onClick={() => addIcalUrl('Airbnb')}
-            className="text-xs font-semibold flex items-center gap-1"
-            style={{ color: '#FF5A5F' }}>
+            className="text-xs font-semibold flex items-center gap-1" style={{ color: '#FF5A5F' }}>
             <Plus size={12} /> Add another Airbnb URL
           </button>
         </div>
-
-        {/* Booking.com iCal URLs */}
         <div className="space-y-2">
           <label className="label" style={{ color: '#0071C2' }}>Booking.com iCal URLs</label>
           {form.bookingIcalUrls.map((url, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input
-                type="url"
-                className="input flex-1 text-xs"
+              <input type="url" className="input flex-1 text-xs"
                 placeholder="https://admin.booking.com/hotel/ical/..."
-                value={url}
-                onChange={e => updateIcalUrl('Booking.com', i, e.target.value)}
-              />
+                value={url} onChange={e => updateIcalUrl('Booking.com', i, e.target.value)} />
               {form.bookingIcalUrls.length > 1 && (
                 <button type="button" onClick={() => removeIcalUrl('Booking.com', i)}
                   className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 flex-shrink-0">
@@ -145,8 +135,7 @@ function PropertyForm({ property, onClose, onSaved }) {
             </div>
           ))}
           <button type="button" onClick={() => addIcalUrl('Booking.com')}
-            className="text-xs font-semibold flex items-center gap-1"
-            style={{ color: '#0071C2' }}>
+            className="text-xs font-semibold flex items-center gap-1" style={{ color: '#0071C2' }}>
             <Plus size={12} /> Add another Booking.com URL
           </button>
         </div>
@@ -199,15 +188,13 @@ function ShareLinkModal({ property, onClose }) {
           </button>
           <button onClick={shareWhatsApp}
             className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors">
-            <Share2 size={16} />
-            WhatsApp
+            <Share2 size={16} /> WhatsApp
           </button>
         </div>
         <a href={guestUrl} target="_blank" rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 text-sm font-semibold py-2"
           style={{ color: 'var(--color-primary)' }}>
-          <ExternalLink size={14} />
-          Preview guest form
+          <ExternalLink size={14} /> Preview guest form
         </a>
         <div className="text-xs text-gray-400 text-center leading-relaxed">
           Share this link with guests via WhatsApp, SMS, or any messaging app.
@@ -219,21 +206,13 @@ function ShareLinkModal({ property, onClose }) {
 
 // ─── Co-Host Request Modal ────────────────────────────────────────────────────
 function CoHostModal({ onClose, existingRequest }) {
-  const [form, setForm] = useState({
-    totalProperties: '',
-    propertiesNeedingPM: '',
-    locations: '',
-    message: '',
-  });
+  const [form, setForm] = useState({ totalProperties: '', propertiesNeedingPM: '', locations: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(!!existingRequest);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.totalProperties || !form.propertiesNeedingPM) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+    if (!form.totalProperties || !form.propertiesNeedingPM) { toast.error('Please fill in all required fields'); return; }
     setLoading(true);
     try {
       await api.post('/cohost', form);
@@ -250,14 +229,13 @@ function CoHostModal({ onClose, existingRequest }) {
     <Modal isOpen title="Get a Co-Host / Property Manager" onClose={onClose} size="md">
       {submitted || existingRequest ? (
         <div className="text-center py-6 space-y-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
-            style={{ background: 'var(--color-primary-light)' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: 'var(--color-primary-light)' }}>
             <Users2 size={28} style={{ color: 'var(--color-primary)' }} />
           </div>
           <div>
             <h3 className="font-bold text-gray-900 text-lg">Request Received!</h3>
             <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-              Our team will review your request and reach out to you within <strong>48 hours</strong> to discuss the best property management solution for your needs.
+              Our team will review your request and reach out within <strong>48 hours</strong>.
             </p>
           </div>
           {existingRequest && (
@@ -272,7 +250,7 @@ function CoHostModal({ onClose, existingRequest }) {
         <div className="space-y-4">
           <div className="rounded-xl p-4" style={{ background: 'var(--color-primary-light)' }}>
             <p className="text-sm font-semibold text-gray-700 leading-relaxed">
-              Struggling to manage your properties? Let us connect you with a verified co-host or property manager who will handle day-to-day operations, guest communication, and more.
+              Struggling to manage your properties? Let us connect you with a verified co-host or property manager.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -280,36 +258,30 @@ function CoHostModal({ onClose, existingRequest }) {
               <div className="input-group">
                 <label className="label">Total Properties *</label>
                 <input type="number" min="1" className="input" placeholder="e.g. 3"
-                  value={form.totalProperties}
-                  onChange={e => setForm({ ...form, totalProperties: e.target.value })} />
+                  value={form.totalProperties} onChange={e => setForm({ ...form, totalProperties: e.target.value })} />
               </div>
               <div className="input-group">
                 <label className="label">Need PM for *</label>
                 <input type="number" min="1" className="input" placeholder="e.g. 2"
-                  value={form.propertiesNeedingPM}
-                  onChange={e => setForm({ ...form, propertiesNeedingPM: e.target.value })} />
+                  value={form.propertiesNeedingPM} onChange={e => setForm({ ...form, propertiesNeedingPM: e.target.value })} />
               </div>
             </div>
             <div className="input-group">
               <label className="label">Property Locations</label>
               <input type="text" className="input" placeholder="e.g. Goa, Mumbai"
-                value={form.locations}
-                onChange={e => setForm({ ...form, locations: e.target.value })} />
+                value={form.locations} onChange={e => setForm({ ...form, locations: e.target.value })} />
             </div>
             <div className="input-group">
               <label className="label">Additional Notes</label>
               <textarea className="input resize-none" rows={3}
-                placeholder="Any specific requirements, property type, preferred start date..."
-                value={form.message}
-                onChange={e => setForm({ ...form, message: e.target.value })} />
+                placeholder="Any specific requirements..."
+                value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
             </div>
             <button type="submit" disabled={loading} className="btn-primary w-full">
               {loading ? 'Submitting...' : 'Submit Request'}
             </button>
           </form>
-          <p className="text-xs text-gray-400 text-center">
-            Someone from our team will contact you within 48 hours.
-          </p>
+          <p className="text-xs text-gray-400 text-center">Someone from our team will contact you within 48 hours.</p>
         </div>
       )}
     </Modal>
@@ -326,7 +298,6 @@ function IcalSyncModal({ property, onClose }) {
     const urlsField = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
     const urls = (property[urlsField] || []).filter(u => u.trim());
     if (!urls.length) return toast.error(`No ${platform} iCal URLs saved. Edit the property to add them.`);
-
     setSyncing(s => ({ ...s, [platform]: true }));
     try {
       const { data } = await api.post(`/import/ical/${property._id}`, { platform, urls });
@@ -355,74 +326,51 @@ function IcalSyncModal({ property, onClose }) {
           <div className="text-xs text-gray-500 font-medium">Property</div>
           <div className="font-bold text-gray-900">{property.name}</div>
         </div>
-
         <div className="text-xs text-gray-500 leading-relaxed">
-          Syncs all date blocks from every iCal URL to your calendar. All bookings land on this property.
-          For guest names and amounts, use CSV import.
+          Syncs all date blocks from every iCal URL. For guest names and amounts, use CSV import.
         </div>
-
         {['Airbnb', 'Booking.com'].map(platform => {
           const urlsField = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
           const urls = (property[urlsField] || []).filter(u => u.trim());
           const result = results[platform];
           const isSyncing = syncing[platform];
-
           return (
             <div key={platform} className="rounded-xl border border-gray-100 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold" style={{ color: PLATFORM_COLORS[platform] }}>
                   {platform}
-                  {urls.length > 0 && (
-                    <span className="ml-1.5 text-xs font-normal text-gray-400">
-                      {urls.length} URL{urls.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
+                  {urls.length > 0 && <span className="ml-1.5 text-xs font-normal text-gray-400">{urls.length} URL{urls.length !== 1 ? 's' : ''}</span>}
                 </span>
-                <button
-                  onClick={() => syncPlatform(platform)}
-                  disabled={isSyncing || !urls.length}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40 active:scale-95"
-                  style={{ background: urls.length ? PLATFORM_COLORS[platform] : '#D1D5DB' }}
-                >
+                <button onClick={() => syncPlatform(platform)} disabled={isSyncing || !urls.length}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white disabled:opacity-40 active:scale-95"
+                  style={{ background: urls.length ? PLATFORM_COLORS[platform] : '#D1D5DB' }}>
                   <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
                   {isSyncing ? 'Syncing...' : 'Sync All'}
                 </button>
               </div>
-
               {urls.length > 0 ? (
                 <div className="space-y-1">
                   {urls.map((url, i) => (
-                    <div key={i} className="text-xs text-gray-400 truncate bg-gray-50 rounded-lg px-2 py-1">
-                      {url}
-                    </div>
+                    <div key={i} className="text-xs text-gray-400 truncate bg-gray-50 rounded-lg px-2 py-1">{url}</div>
                   ))}
                 </div>
               ) : (
-                <div className="text-xs text-amber-600 font-medium">
-                  No URLs added — edit property to add iCal URLs
-                </div>
+                <div className="text-xs text-amber-600 font-medium">No URLs added — edit property to add iCal URLs</div>
               )}
-
               {result && (
                 <div className="flex gap-3 text-xs pt-1 border-t border-gray-50">
                   <span className="text-green-600 font-semibold">{result.created} new</span>
                   <span className="text-gray-400">{result.skipped} skipped</span>
                   <span className="text-gray-400">{result.totalEvents} total events</span>
-                  {result.failedUrls?.length > 0 && (
-                    <span className="text-red-400">{result.failedUrls.length} URL{result.failedUrls.length !== 1 ? 's' : ''} failed</span>
-                  )}
+                  {result.failedUrls?.length > 0 && <span className="text-red-400">{result.failedUrls.length} URL{result.failedUrls.length !== 1 ? 's' : ''} failed</span>}
                 </div>
               )}
             </div>
           );
         })}
-
         <div className="rounded-xl p-3 space-y-1" style={{ background: '#FFF7ED' }}>
           <div className="text-xs font-semibold text-orange-600">Test URLs (localhost only)</div>
-          {[
-            'beach-house-entire', 'beach-house-room', 'beach-house-studio',
-            'mountain-villa', 'city-apartment',
-          ].map(name => (
+          {['beach-house-entire', 'beach-house-room', 'beach-house-studio', 'mountain-villa', 'city-apartment'].map(name => (
             <div key={name} className="text-xs text-orange-500 font-mono truncate">
               http://localhost:5000/ical/{name}.ics
             </div>
@@ -433,16 +381,18 @@ function IcalSyncModal({ property, onClose }) {
   );
 }
 
-// ─── Property Card ────────────────────────────────────────────────────────────
-function PropertyCard({ property, onEdit, onShare, onDelete, onTodosUpdate, onSync }) {
+// ─── Property Detail View ─────────────────────────────────────────────────────
+function PropertyDetail({ property, properties, onBack, onEdit, onSync, onShare, onTodosUpdate }) {
   const queryClient = useQueryClient();
-  const [showTodos, setShowTodos] = useState(false);
   const [newTodo, setNewTodo] = useState('');
   const [addingTodo, setAddingTodo] = useState(false);
-  const hasIcal = property.airbnbIcalUrls?.some(u => u.trim()) ||
-                  property.bookingIcalUrls?.some(u => u.trim());
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
 
-  const pendingTodos = (property.todos || []).filter(t => !t.done);
+  const { data: expensesData, refetch: refetchExpenses } = useQuery({
+    queryKey: ['property-expenses', property._id],
+    queryFn: () => api.get(`/expenses?type=property&propertyId=${property._id}`).then(r => r.data),
+  });
+  const expenses = expensesData?.expenses || [];
 
   const addTodo = async () => {
     if (!newTodo.trim()) return;
@@ -469,146 +419,278 @@ function PropertyCard({ property, onEdit, onShare, onDelete, onTodosUpdate, onSy
     } catch { toast.error('Failed to delete task'); }
   };
 
+  const deleteExpense = async (id) => {
+    try {
+      await api.delete(`/expenses/${id}`);
+      refetchExpenses();
+      queryClient.invalidateQueries({ queryKey: ['profit'] });
+      toast.success('Expense deleted');
+    } catch { toast.error('Failed to delete'); }
+  };
+
+  const hasIcal = property.airbnbIcalUrls?.some(u => u.trim()) || property.bookingIcalUrls?.some(u => u.trim());
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+
   return (
-    <div className="card animate-fade-in-up">
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'var(--color-primary-light)' }}>
-              <Home size={18} style={{ color: 'var(--color-primary)' }} />
-            </div>
-            {/* Red dot badge for pending todos */}
-            {pendingTodos.length > 0 && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold" style={{ fontSize: 9 }}>
-                  {pendingTodos.length > 9 ? '9+' : pendingTodos.length}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="font-bold text-gray-900 truncate">{property.name}</div>
-            {property.location && (
-              <div className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
-                <MapPin size={10} /> {property.location}
-              </div>
-            )}
-            {property.pricePerNight && (
-              <div className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-primary)' }}>
-                ₹{property.pricePerNight.toLocaleString('en-IN')}/night
-              </div>
-            )}
-          </div>
+    <div className="space-y-4 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button onClick={onBack}
+          className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 flex-shrink-0">
+          <ArrowLeft size={16} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-extrabold text-gray-900 truncate">{property.name}</h2>
+          {property.location && <p className="text-xs text-gray-400">{property.location}</p>}
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={() => onEdit(property)}
-            className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors">
-            <Edit3 size={14} />
+        <button onClick={() => onEdit(property)}
+          className="btn-secondary text-sm px-3 py-2 rounded-xl gap-1.5 flex-shrink-0">
+          <Edit3 size={14} /> Edit
+        </button>
+      </div>
+
+      {/* Property Info */}
+      <div className="card space-y-3">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Property Info</div>
+        {property.pricePerNight && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Price/night</span>
+            <span className="font-bold" style={{ color: 'var(--color-primary)' }}>₹{property.pricePerNight.toLocaleString('en-IN')}</span>
+          </div>
+        )}
+        {property.wifiName && (
+          <div className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-gray-50">
+            <Wifi size={13} className="text-gray-400" />
+            <span className="font-medium text-gray-700">{property.wifiName}</span>
+            {property.wifiPassword && <><span className="text-gray-300">·</span><span className="text-gray-500">{property.wifiPassword}</span></>}
+          </div>
+        )}
+        {property.instructions && (
+          <div>
+            <div className="text-xs text-gray-400 font-medium mb-1">Check-in Instructions</div>
+            <div className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-3">{property.instructions}</div>
+          </div>
+        )}
+        {property.mapUrl && (
+          <a href={property.mapUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--color-primary)' }}>
+            <ExternalLink size={13} /> View on Map
+          </a>
+        )}
+        <button onClick={() => onShare(property)}
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95"
+          style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
+          <span className="flex items-center gap-2"><Link2 size={14} /> Share Guest Link</span>
+          <ChevronRight size={15} />
+        </button>
+      </div>
+
+      {/* iCal Sync */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">iCal Sync</div>
+          <button onClick={() => onSync(property)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            style={{ background: hasIcal ? '#FFF7ED' : '#F3F4F6', color: hasIcal ? '#F97316' : '#9CA3AF' }}>
+            <RefreshCw size={12} /> {hasIcal ? 'Sync Now' : 'Add URLs & Sync'}
           </button>
-          <button onClick={() => onDelete(property._id)}
-            className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-red-50 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors">
-            <Trash2 size={14} />
+        </div>
+        {['Airbnb', 'Booking.com'].map(platform => {
+          const field = platform === 'Airbnb' ? 'airbnbIcalUrls' : 'bookingIcalUrls';
+          const urls = (property[field] || []).filter(u => u.trim());
+          const color = platform === 'Airbnb' ? '#FF5A5F' : '#0071C2';
+          return (
+            <div key={platform} className="mb-2">
+              <span className="text-xs font-semibold" style={{ color }}>{platform}</span>
+              {urls.length > 0 ? (
+                <div className="mt-1 space-y-0.5">
+                  {urls.map((url, i) => (
+                    <div key={i} className="text-xs text-gray-400 truncate bg-gray-50 rounded-lg px-2 py-1">{url}</div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-gray-400 ml-2">No URLs — click Edit to add</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Todos */}
+      <div className="card">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Tasks</div>
+        <div className="space-y-1.5">
+          {(property.todos || []).length === 0 && (
+            <p className="text-xs text-gray-400">No tasks yet</p>
+          )}
+          {(property.todos || []).map(todo => (
+            <div key={todo._id} className="flex items-center gap-2 group">
+              <button onClick={() => toggleTodo(todo._id, todo.done)}
+                className="flex-shrink-0 transition-colors"
+                style={{ color: todo.done ? 'var(--color-primary)' : '#D1D5DB' }}>
+                {todo.done ? <CheckSquare size={16} /> : <Square size={16} />}
+              </button>
+              <span className={`flex-1 text-xs ${todo.done ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}`}>
+                {todo.text}
+              </span>
+              <button onClick={() => deleteTodo(todo._id)}
+                className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded flex items-center justify-center text-gray-300 hover:text-red-400 transition-all">
+                <X size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 mt-3">
+          <input
+            type="text"
+            className="flex-1 px-3 py-2 text-xs rounded-xl border border-gray-200 outline-none focus:border-primary-500 bg-white"
+            placeholder="Add a task…"
+            value={newTodo}
+            onChange={e => setNewTodo(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTodo(); } }}
+          />
+          <button onClick={addTodo} disabled={!newTodo.trim() || addingTodo}
+            className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white disabled:opacity-40"
+            style={{ background: 'var(--color-primary)' }}>
+            <Plus size={14} />
           </button>
         </div>
       </div>
 
-      {/* WiFi info */}
-      {property.wifiName && (
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-3 px-3 py-2 rounded-xl bg-gray-50">
-          <Wifi size={12} />
-          <span className="font-medium">{property.wifiName}</span>
-          {property.wifiPassword && (
-            <><span className="text-gray-300">·</span><span>{property.wifiPassword}</span></>
-          )}
-        </div>
-      )}
-
-      {/* To-Do section */}
-      <div className="mb-3">
-        <button
-          onClick={() => setShowTodos(!showTodos)}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors hover:bg-gray-50"
-          style={{ background: pendingTodos.length > 0 ? '#FEF2F2' : 'var(--color-bg)' }}
-        >
-          <div className="flex items-center gap-2">
-            <ClipboardList size={14} style={{ color: pendingTodos.length > 0 ? '#EF4444' : 'var(--color-text-muted)' }} />
-            <span className="text-xs font-semibold"
-              style={{ color: pendingTodos.length > 0 ? '#EF4444' : 'var(--color-text-secondary)' }}>
-              {pendingTodos.length > 0
-                ? `${pendingTodos.length} task${pendingTodos.length > 1 ? 's' : ''} pending`
-                : `Tasks (${(property.todos || []).length})`}
-            </span>
-          </div>
-          {showTodos ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
-        </button>
-
-        {showTodos && (
-          <div className="mt-2 space-y-1.5">
-            {(property.todos || []).map(todo => (
-              <div key={todo._id} className="flex items-center gap-2 group">
-                <button onClick={() => toggleTodo(todo._id, todo.done)}
-                  className="flex-shrink-0 transition-colors"
-                  style={{ color: todo.done ? 'var(--color-primary)' : '#D1D5DB' }}>
-                  {todo.done ? <CheckSquare size={16} /> : <Square size={16} />}
-                </button>
-                <span className={`flex-1 text-xs ${todo.done ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}`}>
-                  {todo.text}
-                </span>
-                <button onClick={() => deleteTodo(todo._id)}
-                  className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded flex items-center justify-center text-gray-300 hover:text-red-400 transition-all">
-                  <X size={11} />
-                </button>
+      {/* Property Expenses */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Property Expenses</div>
+            {expenses.length > 0 && (
+              <div className="text-sm font-bold mt-0.5" style={{ color: 'var(--color-accent)' }}>
+                Total: ₹{totalExpenses.toLocaleString('en-IN')}
               </div>
-            ))}
+            )}
+          </div>
+          <button onClick={() => setShowExpenseModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
+            style={{ background: 'var(--color-accent)' }}>
+            <Plus size={12} /> Add
+          </button>
+        </div>
 
-            {/* Add new todo */}
-            <div className="flex gap-2 mt-2">
-              <input
-                type="text"
-                className="flex-1 px-3 py-2 text-xs rounded-xl border border-gray-200 outline-none focus:border-primary-500 bg-white"
-                placeholder="Add a task… (e.g. Fix plumbing)"
-                value={newTodo}
-                onChange={e => setNewTodo(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTodo(); } }}
-              />
-              <button onClick={addTodo} disabled={!newTodo.trim() || addingTodo}
-                className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white transition-colors disabled:opacity-40"
-                style={{ background: 'var(--color-primary)' }}>
-                <Plus size={14} />
-              </button>
-            </div>
+        {expenses.length === 0 ? (
+          <p className="text-xs text-gray-400">No expenses added yet</p>
+        ) : (
+          <div className="space-y-2">
+            {expenses.map(exp => {
+              const meta = CATEGORY_META[exp.category] || CATEGORY_META.Other;
+              const Icon = meta.icon;
+              return (
+                <div key={exp._id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${meta.color}15` }}>
+                    <Icon size={13} style={{ color: meta.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-800 truncate">{exp.description}</div>
+                    <div className="text-xs text-gray-400">
+                      {exp.category} · {exp.date ? format(new Date(exp.date), 'dd MMM yyyy') : ''}
+                    </div>
+                  </div>
+                  <div className="text-sm font-bold flex-shrink-0" style={{ color: 'var(--color-accent)' }}>
+                    ₹{exp.amount.toLocaleString('en-IN')}
+                  </div>
+                  <button onClick={() => deleteExpense(exp._id)}
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0">
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* iCal Sync button — shown if any iCal URL is saved */}
-      {hasIcal && (
-        <button
-          onClick={() => onSync(property)}
-          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 mb-2"
-          style={{ background: '#FFF7ED', color: '#F97316' }}
-        >
-          <span className="flex items-center gap-2">
-            <CalendarDays size={15} />
-            Sync iCal Bookings
-          </span>
-          <RefreshCw size={14} />
-        </button>
+      {showExpenseModal && (
+        <ExpenseModal
+          defaultType="property"
+          defaultPropertyId={property._id}
+          properties={properties}
+          onClose={() => setShowExpenseModal(false)}
+          onSaved={() => {
+            refetchExpenses();
+            queryClient.invalidateQueries({ queryKey: ['profit'] });
+          }}
+        />
       )}
+    </div>
+  );
+}
 
-      {/* Share link CTA */}
-      <button
-        onClick={() => onShare(property)}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold text-sm transition-all active:scale-95"
-        style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}
-      >
-        <span className="flex items-center gap-2">
-          <Link2 size={15} />
-          Share Guest Link
-        </span>
-        <ChevronRight size={16} />
-      </button>
+// ─── Property Card ────────────────────────────────────────────────────────────
+function PropertyCard({ property, onEdit, onShare, onDelete, onSync, onAddExpense, onViewDetail }) {
+  const hasIcal = property.airbnbIcalUrls?.some(u => u.trim()) || property.bookingIcalUrls?.some(u => u.trim());
+  const pendingTodos = (property.todos || []).filter(t => !t.done);
+
+  return (
+    <div className="card animate-fade-in-up">
+      {/* Clickable main area */}
+      <div className="flex items-center gap-3 cursor-pointer" onClick={onViewDetail}>
+        <div className="relative">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--color-primary-light)' }}>
+            <Home size={18} style={{ color: 'var(--color-primary)' }} />
+          </div>
+          {pendingTodos.length > 0 && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold" style={{ fontSize: 9 }}>
+                {pendingTodos.length > 9 ? '9+' : pendingTodos.length}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-gray-900 truncate">{property.name}</div>
+          {property.location && (
+            <div className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
+              <MapPin size={10} /> {property.location}
+            </div>
+          )}
+          {property.pricePerNight && (
+            <div className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-primary)' }}>
+              ₹{property.pricePerNight.toLocaleString('en-IN')}/night
+            </div>
+          )}
+        </div>
+        <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+      </div>
+
+      {/* Actions row */}
+      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50"
+        onClick={e => e.stopPropagation()}>
+        <button onClick={() => onShare(property)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+          style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
+          <Copy size={11} /> Copy Link
+        </button>
+        <button onClick={() => onAddExpense(property)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors">
+          <IndianRupee size={11} /> Add Expense
+        </button>
+        {hasIcal && (
+          <button onClick={() => onSync(property)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
+            style={{ background: '#FFF7ED', color: '#F97316' }}>
+            <RefreshCw size={11} /> Sync
+          </button>
+        )}
+        <div className="flex-1" />
+        <button onClick={() => onEdit(property)}
+          className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors">
+          <Edit3 size={13} />
+        </button>
+        <button onClick={() => onDelete(property._id)}
+          className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-red-50 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors">
+          <Trash2 size={13} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -622,6 +704,8 @@ export default function Properties() {
   const [shareProperty, setShareProperty] = useState(null);
   const [syncProperty, setSyncProperty] = useState(null);
   const [showCoHostModal, setShowCoHostModal] = useState(false);
+  const [detailPropertyId, setDetailPropertyId] = useState(null);
+  const [expenseProperty, setExpenseProperty] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['properties'],
@@ -633,38 +717,54 @@ export default function Properties() {
     queryFn: () => api.get('/cohost/my').then(r => r.data),
   });
 
+  const properties = data?.properties || [];
+  const detailProperty = properties.find(p => p._id === detailPropertyId);
+
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/properties/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-      toast.success('Property removed');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['properties'] }); toast.success('Property removed'); },
   });
 
   const handleDelete = (id) => {
-    if (window.confirm('Delete this property? All bookings remain.')) {
-      deleteMutation.mutate(id);
-    }
+    if (window.confirm('Delete this property? All bookings remain.')) deleteMutation.mutate(id);
   };
 
-  const handleSaved = () => {
-    queryClient.invalidateQueries({ queryKey: ['properties'] });
-  };
+  const handleSaved = () => queryClient.invalidateQueries({ queryKey: ['properties'] });
 
-  // Update todos in local cache without a full refetch
   const handleTodosUpdate = (propertyId, todos) => {
     queryClient.setQueryData(['properties'], (old) => {
       if (!old) return old;
-      return {
-        ...old,
-        properties: old.properties.map(p =>
-          p._id === propertyId ? { ...p, todos } : p
-        ),
-      };
+      return { ...old, properties: old.properties.map(p => p._id === propertyId ? { ...p, todos } : p) };
     });
   };
 
   const existingCoHostRequest = coHostData?.request;
+
+  // Show detail view if a property is selected
+  if (detailPropertyId && detailProperty) {
+    return (
+      <div className="animate-fade-in">
+        <PropertyDetail
+          property={detailProperty}
+          properties={properties}
+          onBack={() => setDetailPropertyId(null)}
+          onEdit={(p) => { setEditProperty(p); setShowForm(true); }}
+          onSync={setSyncProperty}
+          onShare={setShareProperty}
+          onTodosUpdate={handleTodosUpdate}
+        />
+        {showForm && (
+          <PropertyForm
+            property={editProperty}
+            onClose={() => { setShowForm(false); setEditProperty(null); }}
+            onSaved={handleSaved}
+          />
+        )}
+        {shareProperty && <ShareLinkModal property={shareProperty} onClose={() => setShareProperty(null)} />}
+        {syncProperty && <IcalSyncModal property={syncProperty} onClose={() => setSyncProperty(null)} />}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -672,21 +772,17 @@ export default function Properties() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900">Properties</h2>
-          <p className="text-xs text-gray-400">{data?.properties?.length || 0} active</p>
+          <p className="text-xs text-gray-400">{properties.length} active</p>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="btn-primary text-sm px-3 py-2 rounded-xl gap-1.5">
-          <Plus size={16} />
-          Add Property
+        <button onClick={() => setShowForm(true)} className="btn-primary text-sm px-3 py-2 rounded-xl gap-1.5">
+          <Plus size={16} /> Add Property
         </button>
       </div>
 
-      {/* Co-Host CTA Banner */}
-      <button
-        onClick={() => setShowCoHostModal(true)}
+      {/* Co-Host CTA */}
+      <button onClick={() => setShowCoHostModal(true)}
         className="w-full rounded-2xl p-4 flex items-center justify-between gap-3 transition-all active:scale-95"
-        style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))' }}
-      >
+        style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
             <Users2 size={20} className="text-white" />
@@ -706,10 +802,8 @@ export default function Properties() {
       </button>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <PropertyCardSkeleton key={i} />)}
-        </div>
-      ) : data?.properties?.length === 0 ? (
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <PropertyCardSkeleton key={i} />)}</div>
+      ) : properties.length === 0 ? (
         <div className="card text-center py-14">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
             style={{ background: 'var(--color-primary-light)' }}>
@@ -720,21 +814,21 @@ export default function Properties() {
             Create a property to get a unique guest link to share with your guests.
           </p>
           <button onClick={() => setShowForm(true)} className="btn-primary mx-auto">
-            <Plus size={16} />
-            Add Property
+            <Plus size={16} /> Add Property
           </button>
         </div>
       ) : (
         <div className="space-y-3">
-          {data.properties.map(p => (
+          {properties.map(p => (
             <PropertyCard
               key={p._id}
               property={p}
               onEdit={(p) => { setEditProperty(p); setShowForm(true); }}
               onShare={setShareProperty}
               onDelete={handleDelete}
-              onTodosUpdate={handleTodosUpdate}
               onSync={setSyncProperty}
+              onAddExpense={setExpenseProperty}
+              onViewDetail={() => setDetailPropertyId(p._id)}
             />
           ))}
         </div>
@@ -747,25 +841,21 @@ export default function Properties() {
           onSaved={handleSaved}
         />
       )}
-
-      {shareProperty && (
-        <ShareLinkModal
-          property={shareProperty}
-          onClose={() => setShareProperty(null)}
-        />
-      )}
-
-      {syncProperty && (
-        <IcalSyncModal
-          property={syncProperty}
-          onClose={() => setSyncProperty(null)}
-        />
-      )}
-
+      {shareProperty && <ShareLinkModal property={shareProperty} onClose={() => setShareProperty(null)} />}
+      {syncProperty && <IcalSyncModal property={syncProperty} onClose={() => setSyncProperty(null)} />}
       {showCoHostModal && (
         <CoHostModal
           onClose={() => { setShowCoHostModal(false); queryClient.invalidateQueries({ queryKey: ['cohost-my'] }); }}
           existingRequest={existingCoHostRequest}
+        />
+      )}
+      {expenseProperty && (
+        <ExpenseModal
+          defaultType="property"
+          defaultPropertyId={expenseProperty._id}
+          properties={properties}
+          onClose={() => setExpenseProperty(null)}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['profit'] })}
         />
       )}
     </div>
