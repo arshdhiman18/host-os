@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import {
   Search, Download, Plus, Trash2, Phone,
-  Users, FileText, ThumbsUp, ThumbsDown, MessageCircle, Edit3, PhonePlus
+  Users, FileText, ThumbsUp, ThumbsDown, MessageCircle, Edit3, PhoneCall
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -457,7 +457,7 @@ export default function Guests() {
                   <button
                     onClick={() => setAddPhoneFor(b)}
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-400 text-xs font-semibold hover:bg-blue-50 hover:text-blue-500 transition-colors">
-                    <PhonePlus size={12} /> Add Phone
+                    <PhoneCall size={12} /> Add Phone
                   </button>
                 )}
                 <div className="flex-1" />
