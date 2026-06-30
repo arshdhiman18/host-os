@@ -3,11 +3,24 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import api from './utils/api';
 
-// Keep Render free tier alive — ping every 14 minutes
+// Keep Render free tier alive — ping every 14 minutes, but only 8 AM–10 PM IST
 const useKeepAlive = () => {
   useEffect(() => {
-    const ping = () => api.get('/health').catch(() => {});
-    ping(); // ping on load
+    const isActiveHour = () => {
+      const hour = parseInt(
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour: 'numeric',
+          hour12: false,
+        }).format(new Date()),
+        10
+      );
+      return hour >= 8 && hour < 22;
+    };
+    const ping = () => {
+      if (isActiveHour()) api.get('/health').catch(() => {});
+    };
+    ping(); // ping on load if within active hours
     const id = setInterval(ping, 14 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
